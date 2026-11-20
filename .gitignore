@@ -12,3 +12,7 @@ __pycache__/
 .env.*
 Unknown*.pdf
 docs/demo/*.mp4
+
+# Backend data (SQLite + media)
+/data/
+/backend/data/
