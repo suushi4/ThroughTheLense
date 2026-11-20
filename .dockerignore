@@ -1,0 +1,9 @@
+.git
+node_modules
+tests
+data
+backend/data
+*.md
+.claude
+.gstack
+gstack
