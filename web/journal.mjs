@@ -56,11 +56,11 @@ function unpackMedia(stored) {
     ? new Blob([stored.bytes], options)
     : new File([stored.bytes], stored.name, options);
 }
-export async function listDays() {
+async function idbListDays() {
   const rows = await read('entries', 'getAll');
   return rows.map(row => ({...row, thumbnail: unpackMedia(row.thumbnail)}));
 }
-export async function getDay(id) {
+async function idbGetDay(id) {
   const row = await read('content', 'get', id);
   if (!row) return undefined;
   return {
@@ -88,7 +88,7 @@ export async function saveDraft(key,draft) {
     tx.objectStore('drafts').put({...snapshot,key,photos,audio});
   });
 }
-export async function removeDay(id) {
+async function idbRemoveDay(id) {
   const db=await openArchive();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(['entries','content','drafts'],'readwrite');
@@ -97,7 +97,7 @@ export async function removeDay(id) {
     for(const name of ['entries','content','drafts'])tx.objectStore(name).delete(id);
   });
 }
-export async function saveDay(entry, thumbnail, draftKey) {
+async function idbSaveDay(entry, thumbnail, draftKey) {
   const snapshot = {...entry, scene: {...entry.scene}};
   const {id, dayDate, title, audioName} = snapshot;
   const [photos, audio, cover, db] = await Promise.all([
@@ -130,4 +130,48 @@ export async function saveDay(entry, thumbnail, draftKey) {
       reject(error);
     }
   });
+}
+
+// Server storage when the journal is served by the backend; IndexedDB otherwise
+// (serve.py, offline, or no localStorage). Chosen once per page load.
+let backend;
+function server() {
+  backend ??= (async () => {
+    try {
+      const response = await fetch('/api/health', {cache: 'no-store', signal: AbortSignal.timeout?.(1500)});
+      if (!response.ok || (await response.json())?.ok !== true) return null;
+      const api = await import('./storage-api.mjs');
+      return api.ready() ? api : null;
+    } catch { return null; }
+  })();
+  return backend;
+}
+export async function usesServer() { return Boolean(await server()); }
+async function removeDraft(key) {
+  const db=await openArchive();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('drafts','readwrite');
+    tx.oncomplete=resolve; tx.onabort=()=>reject(tx.error);
+    tx.objectStore('drafts').delete(key);
+  });
+}
+export async function listDays() {
+  const api = await server();
+  return api ? api.listDays() : idbListDays();
+}
+export async function getDay(id) {
+  const api = await server();
+  return api ? api.getDay(id) : idbGetDay(id);
+}
+export async function saveDay(entry, thumbnail, draftKey) {
+  const api = await server();
+  if (!api) return idbSaveDay(entry, thumbnail, draftKey);
+  await api.saveDay(entry, thumbnail, draftKey === entry.id);
+  if (draftKey) await removeDraft(draftKey).catch(() => {});
+}
+export async function removeDay(id) {
+  const api = await server();
+  if (!api) return idbRemoveDay(id);
+  await api.removeDay(id);
+  await removeDraft(id).catch(() => {});
 }
