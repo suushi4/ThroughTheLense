@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru" data-type="software">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#132c32">
+  <meta name="site-kind" content="software">
+  <meta name="page-type" content="software">
+  <meta name="description" content="Личный фотодневник. Сохраните атмосферу дня в фотографиях, собственных словах и музыке.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <title>ThroughTheLense — Архив дней</title>
+</head>
+<body>
+  <a class="skip" href="#main">К содержанию</a>
+  <header class="mast"><div class="wrap mast-inner">
+    <a class="brand" href="#archive" aria-label="ThroughTheLense, главная"><img src="favicon.svg" alt="" width="33" height="33"><span>ThroughTheLense</span></a>
+    <nav aria-label="Основная навигация"><a id="nav-archive" href="#archive">Архив</a><button type="button" id="about-trigger">О проекте</button></nav>
+    <a class="btn primary create-link" href="#new"><span aria-hidden="true" class="plus">+</span> Новый день</a>
+  </div></header>
+  <main class="wrap" id="main" tabindex="-1">
+    <p class="loading-state" role="status">Открываем дневник…</p>
+  </main>
+  <footer class="wrap foot"><span>ThroughTheLense</span><small>Личные дни хранятся в этом браузере</small><button type="button" id="foot-about">О проекте</button></footer>
+  <div id="status" class="toast" role="status"></div>
+  <dialog id="dialog"><div id="dialog-body"></div><button class="round close-dialog" id="dialog-close" type="button" aria-label="Закрыть">×</button></dialog>
+  <noscript>Для фотодневника включите JavaScript в настройках браузера.</noscript>
+  <script type="module">
+    import('./app.mjs?v=3').catch(error => {
+      console.error('ThroughTheLense: ошибка запуска', error);
+      document.querySelector('#main').innerHTML =
+        '<section class="empty startup-error" role="alert"><h1>Дневник не загрузился</h1>' +
+        '<p>Обновите страницу, чтобы повторить загрузку.</p>' +
+        '<button class="btn primary" type="button">Обновить страницу</button></section>';
+      document.querySelector('.startup-error button').onclick = () => location.reload();
+    });
+  </script>
+</body></html>

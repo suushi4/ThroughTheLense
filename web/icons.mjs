@@ -1,0 +1,26 @@
+const paths = {
+  shuffle:'<path d="M3 6h2c5 0 6 12 11 12h5m-4-4 4 4-4 4M3 18h2c2 0 3-2 4-4m4-4c1-2 2-4 5-4h3m-4-4 4 4-4 4"/>',
+  search:'<circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/>',
+  aperture:'<circle cx="12" cy="12" r="9.4"/><path d="m13.6 2.8 5.1 8.8m2.4 2.1H11m7.1 5.6-5.1-8.8m-2.6 10.7-5.1-8.8M3 10.4h10.2M6 4.7l5.1 8.8"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', play:'<path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none"/>',
+  pause:'<path d="M8.5 6v12m7-12v12" stroke-width="3"/>',
+  replay:'<path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/>',
+  arrow:'<path d="M4 12h15m-6-6 6 6-6 6"/>', back:'<path d="M20 12H5m6 6-6-6 6-6"/>',
+  music:'<path d="M9 17V6l11-2v11M9 9l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+  wave:'<path d="M3 11v2m3-5v8m3-11v14m3-10v6m3-12v18m3-14v10m3-7v4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 3 3 4-6 4 6"/>',
+  sound:'<path d="M3 9h4l5-4v14l-5-4H3zm13-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
+  mute:'<path d="M3 9h4l5-4v14l-5-4H3zm13 1 5 5m0-5-5 5"/>',
+  lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  down:'<path d="m6 9 6 6 6-6"/>', close:'<path d="m6 6 12 12M18 6 6 18"/>',
+  check:'<path d="m4 12 5 5L20 6"/>', book:'<path d="M4 5h12a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3zm0 12a3 3 0 0 1 3-3h12"/>',
+  stack:'<rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',
+  expand:'<path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5"/>',
+  sort:'<path d="M4 6h15M4 12h11M4 18h6"/>'
+};
+export function icon(key,size=19) {
+  return '<svg aria-hidden="true" focusable="false" width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+paths[key]+'</svg>';
+}

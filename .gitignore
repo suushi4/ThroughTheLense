@@ -1,0 +1,14 @@
+.DS_Store
+.agents/
+.claude/
+.codex/
+.gstack/
+.taste-skill/
+gstack/
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.*
+Unknown*.pdf
+docs/demo/*.mp4
