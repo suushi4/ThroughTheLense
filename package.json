@@ -1,0 +1,11 @@
+{
+  "name": "through-the-lense",
+  "private": true,
+  "scripts": {
+    "test": "node --test scene.test.mjs",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
+}
