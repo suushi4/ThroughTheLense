@@ -191,17 +191,26 @@ async function run() {
     await phone.locator('[data-cover="1"]').click();
     assert.equal(await phone.locator('#proof-image').getAttribute('src'),await phone.locator('[data-cover="1"] img').getAttribute('src'));
     await phone.locator('#prepare').click();await phone.locator('#save').waitFor();
+    await phone.locator('.timing-editor summary').click();
+    await phone.locator('#quote-cue').fill('3.5');
+    await phone.locator('#return-cue').fill('8.4');
     assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth),360);
     await phone.locator('#save').click();await phone.waitForURL('**/#day/*');await phone.reload();
     const savedCover=await phone.evaluate(async()=>{
       const {getDay}=await import('./journal.mjs');
       const entry=await getDay(location.hash.slice(5));
-      return [entry.scene.coverPhotoIndex,entry.photoFiles.map(file=>file.name)];
+      return [entry.scene.coverPhotoIndex,entry.photoFiles.map(file=>file.name),entry.scene.quoteAtSec,entry.scene.returnAtSec];
     });
-    assert.deepEqual(savedCover,[1,['street.jpg','rain.jpg']]);
+    assert.deepEqual(savedCover,[1,['street.jpg','rain.jpg'],3.5,8.4]);
     await phone.getByRole('button',{name:'Воспроизвести',exact:true}).click();
     await phone.waitForSelector('.stage[data-phase="1"]');
-    console.log('Mobile passed: 360 px, reduced motion, empty private archive in a fresh profile, sample to saved scene, reload and real playback.');
+    await phone.locator('.back').click();
+    await phone.getByRole('button',{name:'Примеры',exact:true}).click();
+    const featured=await phone.locator('.feature').getAttribute('href');
+    await phone.getByRole('button',{name:'Случайный день'}).click();
+    await phone.getByRole('button',{name:'Пауза',exact:true}).waitFor();
+    assert.notEqual(new URL(phone.url()).hash,featured);
+    console.log('Mobile passed: 360 px, reduced motion, manual cues saved across reload, real playback and random day.');
   } finally {await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
