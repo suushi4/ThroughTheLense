@@ -6,12 +6,15 @@ WORKDIR /src
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY scripts/ scripts/
-COPY web/ web/
+# Everything the build might read (web/, scripts/, any new folder); what is
+# excluded is listed in .dockerignore.
+COPY . .
 # Canonical links and social preview URLs point at this origin. Railway passes
 # a service variable into the build only when it is declared as an ARG.
 ARG SITE_ORIGIN=
-RUN SITE_ORIGIN="$SITE_ORIGIN" npm run build
+# A failing build or check stops the image here, so Railway keeps serving the
+# previous deployment instead of a broken site.
+RUN SITE_ORIGIN="$SITE_ORIGIN" npm run build && node scripts/check-dist.mjs dist
 
 FROM golang:1.27-alpine AS server
 WORKDIR /src
