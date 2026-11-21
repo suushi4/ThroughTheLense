@@ -205,14 +205,17 @@ func TestPublicDeployment(t *testing.T) {
 	}
 	c.host = "127.0.0.1:8080"
 	expect(t, c.call("GET", "/api/session", ""), 403, "")
+	c.host = "healthcheck.railway.app"
+	expect(t, c.call("GET", "/api/runtime", ""), 200, "")
+	expect(t, c.call("POST", "/api/runtime", ""), 403, "")
 
 	// Behind the proxy each visitor gets their own window.
 	c.host = "ttl.example"
 	for i := 0; i < 8; i++ {
-		c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.1")
+		c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.1")
 	}
-	expect(t, c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.1"), 429, "")
-	expect(t, c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.2"), 200, "")
+	expect(t, c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.1"), 429, "")
+	expect(t, c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.2"), 200, "")
 }
 
 func TestRateLimit(t *testing.T) {

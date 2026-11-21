@@ -25,14 +25,7 @@ python3 serve.py
 
 ## Развёртывание
 
-Go-сервер из `backend/` раздаёт собранный `dist/` и реализует тот же HTTP API, что `account_server.py`, поэтому фронтенд работает с ним без изменений. Для Fly.io образ собирается удалённо по `Dockerfile` и `fly.toml`: SQLite и копии дней лежат на томе `/data`.
-
-```sh
-fly auth login
-fly apps create throughthelense            # другое имя замените в fly.toml
-fly volumes create ttl_data --size 1 --region fra
-fly deploy
-```
+Go-сервер из `backend/` раздаёт собранный `dist/` и реализует тот же HTTP API, что `account_server.py`, поэтому фронтенд работает с ним без изменений. Образ собирается по `Dockerfile`, настройки Railway лежат в `railway.toml`. SQLite и копии дней хранятся на томе `/data`.
 
 Локально тот же сервер запускается так (по умолчанию слушает только `127.0.0.1:8080`):
 
@@ -44,8 +37,10 @@ cd backend && WEB_DIR=../dist DATA_DIR=../data go run ./cmd/server
 | Переменная | Значение |
 | --- | --- |
 | `PORT`, `WEB_DIR`, `DATA_DIR` | Порт (8080), каталог статики (`dist/`, иначе `web/`), каталог данных (`data/`, также читается `TTL_DATA_DIR`) |
-| `PUBLIC_BASE_URL` | Публичный origin, например `https://throughthelense.fly.dev`. Включает прослушивание всех интерфейсов, проверку `Host` и `Origin` по нему, `Secure` для cookie и HSTS |
-| `TRUST_PROXY=1` | Лимиты попыток считаются по `Fly-Client-IP` вместо адреса соединения |
+| `PUBLIC_BASE_URL` | Публичный origin, например `https://throughthelense.up.railway.app`. Включает прослушивание всех интерфейсов, проверку `Host` и `Origin` по нему, `Secure` для cookie и HSTS |
+| `HOST` | Адрес прослушивания. В образе `0.0.0.0`, локально `127.0.0.1` |
+| `TRUST_PROXY=1` | Лимиты попыток считаются по последнему адресу в `X-Forwarded-For`, который добавляет прокси платформы |
+| `SITE_ORIGIN` | Аргумент сборки образа: canonical и адреса изображений для шаринга в `dist/` |
 | `MAX_CONCURRENT_UPLOADS` | Сколько сохранений дня принимается одновременно (2) |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Как у `serve.py`: `/api/runtime` переключает фронтенд на Supabase |
 

@@ -1,5 +1,5 @@
 # ThroughTheLense: built site (dist/) + Go server in one image.
-# Fly.io builds it remotely: flyctl deploy (see fly.toml).
+# Railway builds it remotely: railway up (see railway.toml).
 
 FROM node:22-bookworm-slim AS web
 WORKDIR /src
@@ -8,7 +8,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY scripts/ scripts/
 COPY web/ web/
-# Canonical links, sitemap and social preview URLs point at this origin.
+# Canonical links and social preview URLs point at this origin. Railway passes
+# a service variable into the build only when it is declared as an ARG.
 ARG SITE_ORIGIN=
 RUN SITE_ORIGIN="$SITE_ORIGIN" npm run build
 
@@ -19,11 +20,12 @@ RUN go mod download
 COPY backend/ ./
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
-# distroless/static runs as root so it can write to Fly volumes, which mount root-owned.
+# distroless/static (not :nonroot) runs as root so it can write to the volume,
+# which Railway mounts owned by root.
 FROM gcr.io/distroless/static-debian12
 COPY --from=server /out/server /app/server
 COPY --from=web /src/dist /app/dist
-ENV PORT=8080 DATA_DIR=/data WEB_DIR=/app/dist
-VOLUME /data
+# Railway sets PORT; HOST makes the server listen on every interface.
+ENV HOST=0.0.0.0 PORT=8080 DATA_DIR=/data WEB_DIR=/app/dist
 EXPOSE 8080
 ENTRYPOINT ["/app/server"]
