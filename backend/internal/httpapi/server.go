@@ -13,25 +13,29 @@ import (
 
 	"throughthelense/backend/internal/auth"
 	"throughthelense/backend/internal/config"
+	"throughthelense/backend/internal/copies"
 	"throughthelense/backend/internal/store"
 )
 
 type Server struct {
-	cfg    config.Config
-	web    *os.Root
-	store  *store.Store
-	limits map[string]*auth.Limiter
+	cfg     config.Config
+	web     *os.Root
+	store   *store.Store
+	copies  *copies.Dir
+	limits  map[string]*auth.Limiter
+	uploads chan struct{}
 }
 
 // postLimits mirrors POST_LIMITS in account_server.py (requests per minute).
 var postLimits = map[string]int{"/api/login": 8, "/api/register": 6, "/api/analytics": 60}
 
-func New(cfg config.Config, st *store.Store) (*Server, error) {
+func New(cfg config.Config, st *store.Store, cp *copies.Dir) (*Server, error) {
 	web, err := os.OpenRoot(cfg.WebDir)
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{cfg: cfg, web: web, store: st, limits: map[string]*auth.Limiter{}}
+	uploads := max(cfg.MaxUploads, 1)
+	s := &Server{cfg: cfg, web: web, store: st, copies: cp, limits: map[string]*auth.Limiter{}, uploads: make(chan struct{}, uploads)}
 	for path, n := range postLimits {
 		s.limits[path] = auth.NewLimiter(n, time.Minute)
 	}

@@ -30,7 +30,7 @@ type Config struct {
 func Load() (Config, error) {
 	c := Config{
 		Port:          env("PORT", "8080"),
-		DataDir:       env("DATA_DIR", "data"),
+		DataDir:       env("DATA_DIR", env("TTL_DATA_DIR", "data")),
 		WebDir:        env("WEB_DIR", defaultWebDir()),
 		PublicBaseURL: strings.TrimRight(env("PUBLIC_BASE_URL", ""), "/"),
 		SupabaseURL:   env("SUPABASE_URL", ""),

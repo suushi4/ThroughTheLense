@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"throughthelense/backend/internal/config"
+	"throughthelense/backend/internal/copies"
 	"throughthelense/backend/internal/store"
 )
 
@@ -47,7 +48,11 @@ func newTestServer(t *testing.T, cfg config.Config) *Server {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { st.Close() })
-	s, err := New(cfg, st)
+	cp, err := copies.Open(filepath.Join(t.TempDir(), "copies"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := New(cfg, st, cp)
 	if err != nil {
 		t.Fatal(err)
 	}

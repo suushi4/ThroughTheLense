@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"throughthelense/backend/internal/config"
+	"throughthelense/backend/internal/copies"
 	"throughthelense/backend/internal/httpapi"
 	"throughthelense/backend/internal/store"
 )
@@ -36,7 +37,11 @@ func run() error {
 		return err
 	}
 	defer st.Close()
-	handler, err := httpapi.New(cfg, st)
+	cp, err := copies.Open(filepath.Join(cfg.DataDir, "copies"))
+	if err != nil {
+		return err
+	}
+	handler, err := httpapi.New(cfg, st, cp)
 	if err != nil {
 		return err
 	}
@@ -53,6 +58,7 @@ func run() error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	go sweep(ctx, st, cp)
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()
 	log.Printf("ThroughTheLense on %s (web %s, data %s)", cfg.Addr, cfg.WebDir, cfg.DataDir)
@@ -68,4 +74,25 @@ func run() error {
 		return err
 	}
 	return nil
+}
+
+// sweep removes copy files left behind by interrupted saves, at start and
+// then hourly.
+func sweep(ctx context.Context, st *store.Store, cp *copies.Dir) {
+	for {
+		n, err := cp.Sweep(func(rev string) bool {
+			used, err := st.HasRevision(ctx, rev)
+			return used || err != nil // keep the file when unsure
+		}, 10*time.Minute)
+		if err != nil {
+			log.Printf("sweep: %v", err)
+		} else if n > 0 {
+			log.Printf("sweep: removed %d stale copy files", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Hour):
+		}
+	}
 }
