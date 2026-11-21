@@ -7,6 +7,7 @@ import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 import {openShare,shareSupported} from './share.mjs';
 import {logout} from './account.mjs';
+import {ambienceLibrary,ambienceItem,defaultAmbienceGain,sanitizeAmbience,suggestAmbience} from './ambience.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
@@ -34,7 +35,9 @@ function newDraft(editing){
     photos:editing?.photoFiles ?? [],coverIndex:editing?.scene.coverPhotoIndex ?? 0,
     audio:editing?.audioFile ?? null,audioName:editing?.audioName ?? '',
     title:editing?.title ?? '',quote:editing?.scene.quote ?? '',
-    cues:editing?.scene && {quoteAtSec:editing.scene.quoteAtSec,returnAtSec:editing.scene.returnAtSec},revision:0
+    cues:editing?.scene && {quoteAtSec:editing.scene.quoteAtSec,returnAtSec:editing.scene.returnAtSec},revision:0,
+    // An edited day keeps its sounds as chosen; a new one gets a suggestion.
+    ambience:editing ? sanitizeAmbience(editing.scene.ambience) : null,ambienceSource:editing ? 'manual' : ''
   };
 }
 function draftStatus(message){
@@ -104,6 +107,8 @@ function makePreview(state,composition,photo,timing){
   const quote=state.quote && state.text.includes(state.quote) ? state.quote : composition.quote;
   const scene={version:1,coverPhotoIndex:state.coverIndex,quote,palette:photo.palette,...timing,
     ...(validCues(state.cues,timing.endAtSec)?state.cues:{})};
+  const ambience=sanitizeAmbience(state.ambience);
+  if(ambience.length)scene.ambience=ambience;
   const entry={id:state.id,dayDate:state.dayDate,title:state.title||composition.title,text:state.text,audioName:state.audioName,
     photoFiles:[...state.photos],audioFile:state.audio,scene};
   return {entry,quotes:composition.quotes,thumbnail:photo.thumbnail,revision:state.revision,timing};
@@ -305,6 +310,11 @@ async function formPage(stamp,editing){
         <fieldset class="field track-picks"><legend>Нет своей песни? Возьмите трек из дневника</legend>
           <p class="hint" id="track-hint" role="status"></p>
           <div class="track-options">${demos.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
+        <fieldset class="field ambience-picks"><legend>Звуки места</legend>
+          <p class="hint" id="ambience-hint" role="status"></p>
+          <div class="ambience-chips" id="ambience-chips"></div>
+          <div class="ambience-tools"><label class="sr-only" for="ambience-add">Добавить звук места</label><select id="ambience-add"></select>
+            <label class="ambience-gain" for="ambience-gain">Громкость фона<input type="range" id="ambience-gain" min="0" max="100" step="5"></label></div></fieldset>
       </section>
       <div class="actions stage-actions"><button class="btn primary" type="submit" id="prepare">Посмотреть сцену ${icon('arrow',16)}</button>
         <span class="subtle" id="busy" role="status"></span><span class="subtle" id="draft-status" role="status"></span></div>
@@ -381,6 +391,39 @@ async function formPage(stamp,editing){
       audition.load();
     }
     markTracks();
+    suggestSounds();
+  }
+  // «Звуки места»: suggested from the cover (or the text when the server
+  // cannot look at photos); any change by the person stops suggestions.
+  let ambienceRequest=0,suggestedFor=null;
+  function ambienceGain(){return d.ambience?.[0]?.gain ?? defaultAmbienceGain;}
+  function renderAmbience(){
+    const list=sanitizeAmbience(d.ambience), chosen=new Set(list.map(x=>x.id));
+    $('#ambience-chips').innerHTML=list.map(x=>`<span class="ambience-chip">${icon('wave',14)}${h(ambienceItem(x.id).title)}<button type="button" data-ambience-remove="${x.id}" aria-label="Убрать звук «${h(ambienceItem(x.id).title)}»">${icon('close',13)}</button></span>`).join('');
+    $('#ambience-add').innerHTML='<option value="">+ Добавить звук</option>'+ambienceLibrary.filter(x=>!chosen.has(x.id)).map(x=>`<option value="${x.id}">${h(x.title)}</option>`).join('');
+    $('#ambience-add').disabled=list.length>=4;
+    $('#ambience-gain').value=Math.round(ambienceGain()*100);
+    $('#ambience-gain').disabled=!list.length;
+    const hint=$('#ambience-hint');
+    if(d.ambience==null)hint.textContent=(d.photos.length||d.text.trim())?'Подбираем звуки места…':'Добавьте фото или пару строк, и мы подберём звуки места.';
+    else if(d.ambienceSource==='photo')hint.textContent=list.length?'Подобрано по фото — решаете вы.':'По фото звуков не нашлось. Добавьте, если хотите.';
+    else if(d.ambienceSource==='text')hint.textContent=list.length?'Подобрано по словам записи — решаете вы.':'Подходящих звуков не нашлось. Добавьте, если хотите.';
+    else hint.textContent=list.length?'Звуки выбраны вами.':'Без фона. Добавьте звук, если хотите.';
+    for(const b of main.querySelectorAll('[data-ambience-remove]'))b.onclick=()=>chooseAmbience(sanitizeAmbience(d.ambience).filter(x=>x.id!==b.dataset.ambienceRemove));
+  }
+  function chooseAmbience(list){d.ambience=sanitizeAmbience(list);d.ambienceSource='manual';ambienceRequest++;changed();renderAmbience();}
+  async function suggestSounds(){
+    if(d.ambienceSource==='manual')return;
+    const cover=d.photos[d.coverIndex]||null, key=(cover?.name||'')+'|'+(cover?.size||'')+'|'+d.text;
+    if(!cover && !d.text.trim()){if(d.ambience!=null){d.ambience=null;renderAmbience();}return;}
+    if(key===suggestedFor)return;
+    suggestedFor=key;
+    const req=++ambienceRequest;
+    if(d.ambience==null)renderAmbience();
+    const {ids,source}=await suggestAmbience({text:d.text,cover});
+    if(!current() || req!==ambienceRequest || d.ambienceSource==='manual')return;
+    d.ambience=ids.map(id=>({id,gain:ambienceGain()}));d.ambienceSource=source;
+    changed();renderAmbience();
   }
   // markTracks shows which diary track is chosen and, as a hint only, which
   // one is closest in tone to the cover. Nothing is chosen without a click.
@@ -402,6 +445,10 @@ async function formPage(stamp,editing){
   $('#date').value=d.dayDate;$('#story').value=d.text;picks();updateProgress();
   $('#date').oninput=e=>{d.dayDate=e.target.value;$('#proof-date').textContent=d.dayDate?dateLabel(d.dayDate):'';changed();errorText('date','');};
   $('#story').oninput=e=>{d.text=e.target.value;changed();errorText('story','');};
+  $('#story').onchange=()=>suggestSounds();
+  $('#ambience-add').onchange=e=>{const id=e.target.value;if(id)chooseAmbience([...sanitizeAmbience(d.ambience),{id,gain:ambienceGain()}]);};
+  $('#ambience-gain').onchange=e=>{const gain=Number(e.target.value)/100;chooseAmbience(sanitizeAmbience(d.ambience).map(x=>({...x,gain})));};
+  renderAmbience();
   function filesFor(type,files){
     if(!files.length)return;
     if(type==='photos'){
@@ -436,7 +483,7 @@ async function formPage(stamp,editing){
     try{
       const files=await Promise.all([...sample.photos,sample.audio].map(exampleFile));
       if(!current() || req!==sampleRequest || revision!==d.revision)return;
-      d.photos=files.slice(0,-1);d.coverIndex=0;d.audio=files.at(-1);d.audioName=sample.audioName;d.trackId=sample.id;d.text=sample.text;d.dayDate=sample.dayDate;d.cues=null;
+      d.photos=files.slice(0,-1);d.coverIndex=0;d.audio=files.at(-1);d.audioName=sample.audioName;d.trackId=sample.id;d.text=sample.text;d.dayDate=sample.dayDate;d.cues=null;d.ambience=null;d.ambienceSource='';suggestedFor=null;
       $('#story').value=d.text;$('#date').value=d.dayDate;
       for(const name of ['story','date','photos','song'])errorText(name,'');
       picks();changed();

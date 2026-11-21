@@ -1,6 +1,7 @@
 import {icon} from './icons.mjs';
 import {timeLabel} from './ui.mjs';
 import {phaseAt} from './scene.mjs';
+import {ambienceBed} from './ambience.mjs';
 
 export function mountPlayer(host,entry,autoplay=false) {
   const {scene}=entry;
@@ -38,6 +39,19 @@ export function mountPlayer(host,entry,autoplay=false) {
   const timeline=$('.timeline'), phaseLabel=$('.scene-phase'), clock=$('.time'), chapterGroup=$('.chapters');
   const errorText=$('.error');
   const end=scene.endAtSec;
+  // «Звуки места»: looped field recordings under the song, if the day has them.
+  let bed=ambienceBed(scene.ambience);
+  const bedToggle=document.createElement('button');
+  bedToggle.type='button';bedToggle.className='round ambience-toggle';bedToggle.innerHTML=icon('wave',16);
+  function bedLabel(){
+    const on=bed?.enabled!==false;
+    bedToggle.setAttribute('aria-pressed',String(on));
+    bedToggle.setAttribute('aria-label',on?'Выключить звуки места':'Включить звуки места');
+    bedToggle.title=bedToggle.getAttribute('aria-label');
+  }
+  bedToggle.onclick=()=>{if(bed){bed.enabled=!bed.enabled;bedLabel();}};
+  bedToggle.hidden=!bed;bedLabel();
+  $('.playline').insertBefore(bedToggle,$('.volume'));
   const ticks = host.querySelectorAll('.cue-ticks i');
   photo.src=entry.photos[scene.coverPhotoIndex]; photo.alt=entry.alts?.[scene.coverPhotoIndex] || 'Ключевой снимок дня';
   frameElement.style.setProperty('--scene-paper',scene.palette);
@@ -136,6 +150,7 @@ export function mountPlayer(host,entry,autoplay=false) {
         button.toggleAttribute('data-passed',index<phase);
       });
       reveal.setAttribute('aria-hidden',String(phase!==1));
+      bed?.duck(phase===1);
       if(phase===1)quoteScroll.scrollTop=0;
       endQuote.hidden=phase!==2;
     }
@@ -144,6 +159,7 @@ export function mountPlayer(host,entry,autoplay=false) {
     chapterGroup.style.setProperty('--chapter-progress',chapterProgress);
     slider.value=position;slider.setAttribute('aria-valuetext',timeLabel(position));
     timeline.style.setProperty('--played',(100*position/end)+'%');
+    if(bed && !audio.paused && end-position<=1.5)bed.fadeOut(end-position);
     clock.textContent=timeLabel(position)+' / '+timeLabel(end);
     const action=loading?'Загружается песня':done?'Повторить':audio.paused?'Воспроизвести':'Пауза';
     if(action!==control){
@@ -185,7 +201,8 @@ export function mountPlayer(host,entry,autoplay=false) {
     });
   }
   function muted(){volume.innerHTML=icon(audio.muted?'mute':'sound',16);volume.setAttribute('aria-label',audio.muted?'Включить звук':'Выключить звук');volume.title=volume.getAttribute('aria-label');volume.setAttribute('aria-pressed',String(audio.muted));}
-  audio.onplay=()=>{cancelAnimationFrame(frame);animate();};
+  audio.onplay=()=>{cancelAnimationFrame(frame);animate();bed?.start();};
+  audio.addEventListener('pause',()=>bed?.stop(0.3));
   audio.onpause=update;audio.ontimeupdate=update;audio.onended=finish;
   audio.onerror=()=>{if(!disposed)errorText.textContent='Не удалось воспроизвести звук. Сцену можно посмотреть с помощью ползунка.';};
   play.onclick=()=>audio.paused?start():pause();
@@ -200,7 +217,7 @@ export function mountPlayer(host,entry,autoplay=false) {
     else display(value);
   }
   slider.oninput = () => seek(Number(slider.value));
-  volume.onclick=()=>{audio.muted=!audio.muted;muted();};
+  volume.onclick=()=>{audio.muted=!audio.muted;bed?.mute(audio.muted);muted();};
   function pause(){
     auditionEnd=null;
     if(audio.paused)return;
@@ -224,6 +241,13 @@ export function mountPlayer(host,entry,autoplay=false) {
     setTitle(value){screenTitle.textContent=value;},
     setCues(cues){Object.assign(scene,cues);updateCues();display(position);},
     setQuote(value){scene.quote=value;writeQuote(value);},
+    setAmbience(list){
+      const playing=!audio.paused;
+      bed?.destroy();
+      bed=ambienceBed(list);bed?.mute(audio.muted);
+      bedToggle.hidden=!bed;bedLabel();
+      if(bed && playing)bed.start();
+    },
     destroy(){
       disposed=true;
       lookMotion.removeEventListener('change',centerPhoto);
@@ -231,6 +255,7 @@ export function mountPlayer(host,entry,autoplay=false) {
       audio.onplay=audio.ontimeupdate=audio.onpause=audio.onended=audio.onerror=null;
       audio.removeEventListener('play',stopOriginals);
       cancelAnimationFrame(frame);audio.pause();audio.removeAttribute('src');audio.load();
+      bed?.destroy();
     }
   };
 }

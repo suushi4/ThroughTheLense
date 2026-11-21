@@ -1,4 +1,5 @@
 import {analyzeAudio,analyzePhotos,checkAudio,checkPhotos,validCues,words} from './scene.mjs';
+import {sanitizeAmbience} from './ambience.mjs';
 
 const format='ThroughTheLense/day';
 const maxArchiveBytes=76*1024*1024;
@@ -18,6 +19,9 @@ export async function exportDay(entry){
   const audio=await encodeMedia(entry.audioFile,audioName);
   const {quoteAtSec,returnAtSec}=scene;
   const contents={format,version:1,dayDate,title,text,audioName,quote:scene.quote,coverIndex:scene.coverPhotoIndex,photos,audio,cues:{quoteAtSec,returnAtSec}};
+  // Optional and still version 1: older readers ignore it.
+  const ambience=sanitizeAmbience(scene.ambience);
+  if(ambience.length)contents.ambience=ambience;
   return new Blob([JSON.stringify(contents)],{type:'application/json'});
 }
 
@@ -49,10 +53,12 @@ export async function importDay(file,id){
   const audioFile=decodeMedia(data.audio,12*1024*1024);
   checkPhotos(photoFiles);checkAudio(audioFile);
   const [{thumbnail,palette},timing]=await Promise.all([analyzePhotos(photoFiles,coverIndex),analyzeAudio(audioFile)]);
+  const ambience=sanitizeAmbience(data.ambience);
   const cues=validCues(data.cues,timing.endAtSec)
     ? {quoteAtSec:data.cues.quoteAtSec,returnAtSec:data.cues.returnAtSec} : {};
   return {
     thumbnail,
-    entry:{id,dayDate,title,text,audioName,photoFiles,audioFile,scene:{version:1,coverPhotoIndex:coverIndex,quote,palette,...timing,...cues}}
+    entry:{id,dayDate,title,text,audioName,photoFiles,audioFile,scene:{version:1,coverPhotoIndex:coverIndex,quote,palette,...timing,...cues,
+      ...(ambience.length?{ambience}:{})}}
   };
 }
