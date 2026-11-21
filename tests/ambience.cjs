@@ -116,11 +116,12 @@ async function run() {
     assert.match(await fallback.locator('#ambience-hint').innerText(), /по словам записи/);
 
     // Diary tracks: the ten CC0 recordings work like the examples.
-    const tracks = await context.newPage();
+    // Start with empty guest storage so the demo loader needs no confirmation.
+    const tracks = await browser.newPage({baseURL: base, viewport: {width: 1280, height: 900}});
     tracks.on('pageerror', error => errors.push(error.message));
     await editor(tracks);
     assert.equal(await tracks.locator('[data-track]').count(), 13);
-    assert.equal(await tracks.locator('.track-fit:not([hidden])').count(), 1);
+    await tracks.locator('.track-fit:not([hidden])').waitFor();
     await tracks.locator('[data-track="track-night-talk"]').click();
     await tracks.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Ночной разговор'));
     await tracks.locator('#prepare').click();
