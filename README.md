@@ -25,7 +25,31 @@ python3 serve.py
 
 ## Развёртывание
 
-Для подключения Go-бэкенда из ветки `backend` начните с [CLAUDE.md](CLAUDE.md) и [контракта интеграции](docs/backend-integration.md#подключение-go-бэкенда-из-ветки-backend). Текущие варианты запуска описаны ниже.
+Go-сервер из `backend/` раздаёт собранный `dist/` и реализует тот же HTTP API, что `account_server.py`, поэтому фронтенд работает с ним без изменений. Для Fly.io образ собирается удалённо по `Dockerfile` и `fly.toml`: SQLite и копии дней лежат на томе `/data`.
+
+```sh
+fly auth login
+fly apps create throughthelense            # другое имя замените в fly.toml
+fly volumes create ttl_data --size 1 --region fra
+fly deploy
+```
+
+Локально тот же сервер запускается так (по умолчанию слушает только `127.0.0.1:8080`):
+
+```sh
+npm ci && npm run build
+cd backend && WEB_DIR=../dist DATA_DIR=../data go run ./cmd/server
+```
+
+| Переменная | Значение |
+| --- | --- |
+| `PORT`, `WEB_DIR`, `DATA_DIR` | Порт (8080), каталог статики (`dist/`, иначе `web/`), каталог данных (`data/`, также читается `TTL_DATA_DIR`) |
+| `PUBLIC_BASE_URL` | Публичный origin, например `https://throughthelense.fly.dev`. Включает прослушивание всех интерфейсов, проверку `Host` и `Origin` по нему, `Secure` для cookie и HSTS |
+| `TRUST_PROXY=1` | Лимиты попыток считаются по `Fly-Client-IP` вместо адреса соединения |
+| `MAX_CONCURRENT_UPLOADS` | Сколько сохранений дня принимается одновременно (2) |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Как у `serve.py`: `/api/runtime` переключает фронтенд на Supabase |
+
+Ниже описаны остальные варианты запуска.
 
 Сборка Vercel выдаёт статическую часть и маршрут `/api/runtime`. При подключении Supabase сайт использует Supabase Auth для входа, Postgres для списка дней и закрытое хранилище для материалов. Политики в `supabase/migrations` ограничивают доступ владельцем. Гостевой режим работает и без облачной конфигурации.
 
@@ -53,6 +77,8 @@ npm run test:browser
 ```sh
 TTL_DATA_DIR="$(mktemp -d)" python3 serve.py --no-browser --port 8012
 ```
+
+Для Go-сервера: `npm run build`, затем `cd backend && go test ./... && WEB_DIR=../dist DATA_DIR="$(mktemp -d)" go run ./cmd/server` и `TTL_TEST_URL=http://127.0.0.1:8080` в команде ниже.
 
 Во втором терминале:
 
