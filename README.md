@@ -39,6 +39,7 @@ railway link                  # один раз: проект throughthelense, �
 railway up --ci               # сборка и выкладка, логи в терминале
 railway logs --deployment     # логи запущенного контейнера
 railway redeploy -y           # перезапуск последней сборки без загрузки кода
+scripts/rollback.sh           # список деплоев; scripts/rollback.sh <id> — откат за секунды
 ```
 
 Переменные сервиса: `PORT=8080`, `DATA_DIR=/data`, `WEB_DIR=/app/dist`, `PUBLIC_BASE_URL` и `SITE_ORIGIN` равны публичному адресу, `TRUST_PROXY=1`. `SITE_ORIGIN` объявлен в `Dockerfile` как `ARG`, поэтому попадает в сборку `dist/`. Если домен меняется, обновите обе переменные и выполните `railway up --ci`. Проверка здоровья обращается к `/api/runtime` (`railway.toml`).
