@@ -412,3 +412,14 @@ input[aria-invalid="true"]:not([type=file]), textarea[aria-invalid="true"], .dro
 .foot nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
 .foot nav :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
 .foot nav :is(a, button):hover { text-decoration: underline; text-underline-offset: 4px; }
+
+.archive-month + .archive-month { margin-block-start: 28px; }
+.archive-month h3 { margin-block: 0 12px; font: 700 16px/1.4 var(--sans); text-transform: capitalize; }
+.quote-source p { white-space: pre-wrap; }
+.quote-source mark { padding-inline: .1em; color: var(--ink); background: var(--light-accent); }
+.preview-sounds { display: grid; gap: .45rem; justify-items: start; margin-block: 14px; }
+.preview-sounds p { margin: 0; }
+.field label small { color: var(--muted); margin-inline-start: .35em; font-weight: 500; }
+.trim-controls { padding: 12px; display: grid; gap: 12px; justify-items: start; }
+.trim-controls input[type="range"] { width: 100%; }
+.trim-controls output { font-variant-numeric: tabular-nums; margin-inline-start: 8px; }

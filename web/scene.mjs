@@ -48,6 +48,14 @@ export function rhythm(channels, sampleRate, duration) {
   return {quoteAtSec: accent(0.20,0.40,0.33), returnAtSec: accent(0.62,0.82,0.72), endAtSec};
 }
 
+export function sceneMontage(value, photoCount, coverIndex) {
+  if(value?.mode==='quiet')return {mode:'quiet'};
+  const index=value?.detailIndex;
+  if(value?.mode==='detail' && Number.isInteger(index) && index>=0 && index<photoCount && index!==coverIndex){
+    return {mode:'detail',detailIndex:index};
+  }
+}
+
 export function phaseAt(scene, time) {
   if (time >= scene.returnAtSec) return 2;
   return time >= scene.quoteAtSec ? 1 : 0;

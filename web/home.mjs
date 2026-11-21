@@ -158,7 +158,7 @@ if (journalRoutes.test(location.hash)) {
 
     changes.disconnect();
     player?.destroy();
-    player = mountPlayer(host, {...entry, photos: ['/media/' + name + '-preview.webp'], audioPreload: 'none'});
+    player = mountPlayer(host, {...entry, photos: ['/media/' + name + '-preview.webp', ...entry.photos.slice(1)], audioPreload: 'none'});
     stage = host.querySelector('.stage');
     dialog = host.querySelector('dialog');
     changes.observe(stage, {attributes: true, attributeFilter: ['data-phase']});
@@ -170,6 +170,9 @@ if (journalRoutes.test(location.hash)) {
   choices.forEach((choice, index) => choice.addEventListener('click', () => selectMemory(choice, index)));
   roomChoices.forEach((button, index) => button.addEventListener('click', () => selectMemory(choices[index], index)));
   selectMemory(choices[0], 0);
+  const heroPlay = print.querySelector('.hero-play');
+  heroPlay.hidden = false;
+  heroPlay.onclick = () => player.screen(heroPlay);
   opening.querySelector('.memory-dock').hidden = false;
   switcher.hidden = false;
   const observer = new IntersectionObserver(([entry]) => {

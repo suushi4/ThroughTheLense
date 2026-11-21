@@ -108,3 +108,9 @@ body:has(.screening[open]) { overflow: hidden; }
   .reveal blockquote,.stage[data-phase="1"] .reveal blockquote { opacity: 1; transform: none; transition: none; }
   .playline .round[aria-busy="true"] svg { animation: none; }
 }
+
+.stage[data-detail] > img { width: 49%; object-fit: cover; }
+.stage[data-detail] .reveal { inset-inline-start: 49%; }
+.stage[data-detail] .reveal::before { background: var(--scene-paper,var(--wash)); }
+.stage[data-detail] .quote-scroll { padding: clamp(10px,2vw,30px); }
+.stage[data-detail] .reveal blockquote { font-size: clamp(15px,2.4vw,34px); }

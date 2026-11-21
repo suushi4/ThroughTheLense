@@ -53,3 +53,10 @@
 ## Референсы дизайна
 
 Композиция главной — [MNTN, Кристон Шварце](https://www.figma.com/community/file/788675347108478517/mntn-landing-page). Также [фотопортфолио Кайла Скелли](https://dribbble.com/shots/19672514-Photography-Portfolio-Homepage-Template), [Snow Fall](https://www.grahaphics.com/immersive-web) и [The Art of Noticing](https://hankatt.com/en/projects/the-art-of-noticing) (из README).
+
+
+## Звуки места и новые функции
+
+- Каталог фоновых шумов состоит из записей CC0. Названия, авторы и ссылки на оригиналы перечислены в [атрибуции звуков](../ambience-licenses.md).
+- Подбор звуков работает по словам записи и яркости обложки в браузере. Опциональная интеграция Anthropic включается серверной конфигурацией. Наличие флага `ambience: "vision"` проверяется по `/api/runtime`.
+- Монтаж, экспорт ZIP и обрезка PCM WAV выполняются в браузере. Новых зависимостей продукта для них нет.

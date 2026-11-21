@@ -9,7 +9,7 @@
   <meta name="description" content="Личный фотодневник. Сохраните атмосферу дня в фотографиях, собственных словах и музыке.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/tokens.css">
-  <link rel="stylesheet" href="/styles.css?v=6">
+  <link rel="stylesheet" href="/styles.css?v=7">
   <link rel="stylesheet" href="/player.css">
   <link rel="stylesheet" href="/consent.css">
   <script type="module" src="/consent.mjs"></script>
@@ -34,7 +34,7 @@
   <dialog id="dialog"><div id="dialog-body"></div><button class="round close-dialog" id="dialog-close" type="button" aria-label="Закрыть">×</button></dialog>
   <noscript>Для фотодневника включите JavaScript в настройках браузера.</noscript>
   <script type="module">
-    import('./app.mjs?v=6').catch(error => {
+    import('./app.mjs?v=7').catch(error => {
       console.error('ThroughTheLense: ошибка запуска', error);
       document.querySelector('#main').innerHTML =
         '<section class="empty startup-error" role="alert"><h1>Дневник не загрузился</h1>' +

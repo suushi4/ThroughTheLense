@@ -1,4 +1,4 @@
-import {analyzeAudio,analyzePhotos,checkAudio,checkPhotos,validCues,words} from './scene.mjs';
+import {analyzeAudio,analyzePhotos,checkAudio,checkPhotos,validCues,words,sceneMontage} from './scene.mjs';
 import {sanitizeAmbience} from './ambience.mjs';
 
 const format='ThroughTheLense/day';
@@ -22,6 +22,8 @@ export async function exportDay(entry){
   // Optional and still version 1: older readers ignore it.
   const ambience=sanitizeAmbience(scene.ambience);
   if(ambience.length)contents.ambience=ambience;
+  const montage=sceneMontage(scene.montage,photos.length,scene.coverPhotoIndex);
+  if(montage)contents.montage=montage;
   return new Blob([JSON.stringify(contents)],{type:'application/json'});
 }
 
@@ -54,11 +56,12 @@ export async function importDay(file,id){
   checkPhotos(photoFiles);checkAudio(audioFile);
   const [{thumbnail,palette},timing]=await Promise.all([analyzePhotos(photoFiles,coverIndex),analyzeAudio(audioFile)]);
   const ambience=sanitizeAmbience(data.ambience);
+  const montage=sceneMontage(data.montage,photoFiles.length,coverIndex);
   const cues=validCues(data.cues,timing.endAtSec)
     ? {quoteAtSec:data.cues.quoteAtSec,returnAtSec:data.cues.returnAtSec} : {};
   return {
     thumbnail,
     entry:{id,dayDate,title,text,audioName,photoFiles,audioFile,scene:{version:1,coverPhotoIndex:coverIndex,quote,palette,...timing,...cues,
-      ...(ambience.length?{ambience}:{})}}
+      ...(ambience.length?{ambience}:{}),...(montage?{montage}:{})}}
   };
 }

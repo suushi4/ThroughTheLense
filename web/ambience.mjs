@@ -118,8 +118,8 @@ export async function suggestAmbience({text, cover}) {
 export function ambienceBed(list) {
   const sounds = sanitizeAmbience(list);
   if (!sounds.length) return null;
-  let context, master, buffers, sources = [], wanted = false, enabled = true, ducked = false, muted = false, ending = false;
-  const level = () => (!enabled || muted || ending) ? 0 : ducked ? 0.55 : 1;
+  let context, master, buffers, sources = [], wanted = false, enabled = true, phaseGain = 1, muted = false, ending = false;
+  const level = () => (!enabled || muted || ending) ? 0 : phaseGain;
   function ramp(value, seconds) {
     if (!master) return;
     const now = context.currentTime;
@@ -172,7 +172,7 @@ export function ambienceBed(list) {
       setTimeout(() => { if (!wanted) stopSources(); }, seconds * 1000 + 60);
     },
     fadeOut(seconds) { if (!ending) { ending = true; ramp(0, Math.max(0.2, seconds)); } },
-    duck(on) { if (on !== ducked) { ducked = on; if (wanted) ramp(level(), 0.5); } },
+    setLevel(gain) { if (gain !== phaseGain) { phaseGain = gain; if (wanted) ramp(level(), 0.5); } },
     mute(on) { muted = on; if (wanted) ramp(level(), 0.15); },
     get enabled() { return enabled; },
     set enabled(on) { enabled = on; if (wanted) ramp(level(), 0.4); },

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="ThroughTheLense для Genesis Hackathon: прототип, примеры, описание и код.">
+  <meta name="theme-color" content="#f7f4eb">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/home.css">
+  <link rel="stylesheet" href="/public-page.css">
+  <link rel="stylesheet" href="/jury.css">
+  <title>Материалы для жюри · ThroughTheLense</title>
+</head>
+<body>
+  <a class="skip" href="#content">К содержанию</a>
+  <header class="home-mast"><div class="edge mast-inner public-mast">
+    <a class="wordmark" href="/"><img src="/brand-mark.svg" alt="" width="36" height="36"><span>ThroughThe<em>Lense</em></span></a>
+    <nav aria-label="Проект"><a href="/">Открыть сайт</a></nav>
+  </div></header>
+  <main id="content" class="edge public-page jury" tabindex="-1">
+    <h1>Как ощущался день</h1>
+    <p class="page-lead">ThroughTheLense — личный фотодневник для людей, которые хотят сохранить в снимках голос, ритм и детали прожитого дня.</p>
+    <p>Сначала виден кадр. На музыкальном акценте появляется дословная фраза автора, иногда рядом со второй фотографией. После неё возвращается обложка, и у того же снимка появляется новый контекст.</p>
+    <a class="action solid" href="/journal.html?example=demo-street#new">Собрать день из примера</a>
+
+    <section aria-labelledby="video">
+      <h2 id="video">Демонстрация</h2>
+      <video class="jury-video" controls preload="none" playsinline width="1280" height="800" poster="/media/street-preview.webp" aria-label="Путь от записи дня до архива">
+        <source src="/submission/through-the-lense.mp4" type="video/mp4">
+        <a href="/submission/through-the-lense.mp4">Открыть ролик в MP4</a>
+      </video>
+      <p>Сборка и сохранение дня, скачивание папки и повторный просмотр из архива. В ролике показан постановочный пример.</p>
+    </section>
+
+    <section aria-labelledby="results">
+      <h2 id="results">Примеры воспоминаний</h2>
+      <div class="jury-scenes">
+        <article><a href="/journal.html#day/demo-street"><img src="/media/street-preview.webp" width="1120" height="747" alt="Вечерние огни на мокрой дороге"><h3>Домой без спешки</h3></a><p class="folder-label"><a href="/submission/01-domoy-bez-speshki.zip" download>Скачать 01-domoy-bez-speshki.zip</a></p><p>Общий план улицы сменяется отражением фонаря в луже. На 2,7 секунды появляется фраза про дорогу домой.</p></article>
+        <article><a href="/journal.html#day/demo-cocoa"><img src="/media/cocoa-preview.webp" width="1120" height="747" alt="Два стаканчика у мокрого стекла остановки" loading="lazy"><h3>Какао у остановки</h3></a><p class="folder-label"><a href="/submission/02-kakao-u-ostanovki.zip" download>Скачать 02-kakao-u-ostanovki.zip</a></p><p>Тёплый кадр держится дольше, а на 4,6 секунды открывается личная деталь разговора.</p></article>
+        <article><a href="/journal.html#day/demo-stage"><img src="/media/stage-preview.webp" width="1120" height="747" alt="Пустая сцена со стулом в полосе света" loading="lazy"><h3>Свет после репетиции</h3></a><p class="folder-label"><a href="/submission/03-svet-posle-repeticii.zip" download>Скачать 03-svet-posle-repeticii.zip</a></p><p>Шум зала уходит на фразе об аплодисментах. В финале снова видна пустая сцена.</p></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="rules">
+      <h2 id="rules">Как материалы меняют сцену</h2>
+      <ul>
+        <li><strong>Рассказ.</strong> Автор выбирает дословную фразу или записывает деталь за кадром.</li>
+        <li><strong>Фотографии.</strong> Обложка задаёт оттенок рамки. Второй снимок может появиться рядом с фразой.</li>
+        <li><strong>Песня и звуки места.</strong> Изменения энергии трека задают две отметки на шкале. Фоновый звук можно сравнить и отрегулировать.</li>
+      </ul>
+      <p>Во всех днях сохраняются рамка, типографика и три момента просмотра. Долгая бытовая пауза отсылает к фильмам Ясудзиро Одзу, а переход от общего плана к детали использует принцип соседства кадров в фотокнигах Роберта Фрэнка.</p>
+    </section>
+    <section aria-labelledby="technical">
+      <h2 id="technical">Код и материалы</h2>
+      <ul>
+        <li><a href="https://github.com/suushi4/ThroughTheLense">Репозиторий и инструкция запуска</a></li>
+        <li><a href="https://github.com/suushi4/ThroughTheLense/blob/main/docs/submission/description.md">Описание проекта</a></li>
+        <li><a href="https://github.com/suushi4/ThroughTheLense/blob/main/docs/submission/techniques.md">Художественные приёмы</a></li>
+        <li><a href="https://github.com/suushi4/ThroughTheLense/blob/main/docs/submission/tools.md">Инструменты и источники</a></li>
+      </ul>
+      <p>Фронтенд и дизайн — suushi4. Go-сервер, хранение и деплой — turebayev09. Проект создан для Genesis Hackathon, трек ArtTech.</p>
+    </section>
+  </main>
+</body>
+</html>

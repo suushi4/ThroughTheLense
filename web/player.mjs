@@ -1,6 +1,6 @@
 import {icon} from './icons.mjs';
 import {timeLabel} from './ui.mjs';
-import {phaseAt} from './scene.mjs';
+import {phaseAt,sceneMontage} from './scene.mjs';
 import {ambienceBed} from './ambience.mjs';
 
 export function mountPlayer(host,entry,autoplay=false) {
@@ -23,15 +23,20 @@ export function mountPlayer(host,entry,autoplay=false) {
   const closeScreen=screen.querySelector('.screen-close');
   screenTitle.textContent=entry.title;
   host.append(screen);
-  expand.onclick=()=>{
+  let screenTrigger=expand;
+  function openScreen(trigger){
+    if(screen.open)return;
+    screenTrigger=trigger;
     screen.append(frameElement,controls);
     screen.showModal();
     closeScreen.focus({preventScroll:true});
   };
+  expand.onclick=()=>openScreen(expand);
   closeScreen.onclick=()=>screen.close();
   screen.onclose=()=>{
+    pause();
     host.prepend(frameElement,controls);
-    if(host.isConnected)expand.focus({preventScroll:true});
+    if(screenTrigger.isConnected)screenTrigger.focus({preventScroll:true});
   };
   const $=selector=>host.querySelector(selector);
   const stage=$('.stage'), photo=$('.stage img'), reveal=$('.reveal'), quoteScroll=$('.quote-scroll'), quote=$('blockquote'), endQuote=$('.afterquote');
@@ -49,13 +54,27 @@ export function mountPlayer(host,entry,autoplay=false) {
     bedToggle.setAttribute('aria-label',on?'Выключить звуки места':'Включить звуки места');
     bedToggle.title=bedToggle.getAttribute('aria-label');
   }
-  bedToggle.onclick=()=>{if(bed){bed.enabled=!bed.enabled;bedLabel();}};
+  bedToggle.onclick=()=>{if(bed)setAmbienceEnabled(!bed.enabled);};
+  function setAmbienceEnabled(on){
+    if(!bed)return;
+    bed.enabled=on;bedLabel();
+    host.dispatchEvent(new CustomEvent('ambiencechange',{detail:on}));
+  }
   bedToggle.hidden=!bed;bedLabel();
   $('.playline').insertBefore(bedToggle,$('.volume'));
   const ticks = host.querySelectorAll('.cue-ticks i');
   photo.src=entry.photos[scene.coverPhotoIndex]; photo.alt=entry.alts?.[scene.coverPhotoIndex] || 'Ключевой снимок дня';
   frameElement.style.setProperty('--scene-paper',scene.palette);
   controls.style.setProperty('--scene-paper',scene.palette);
+  function renderMontage(phase){
+    const montage=sceneMontage(scene.montage,entry.photos.length,scene.coverPhotoIndex);
+    const detail=phase===1 && montage?.mode==='detail';
+    const index=detail?montage.detailIndex:scene.coverPhotoIndex;
+    if(photo.getAttribute('src')!==entry.photos[index])photo.src=entry.photos[index];
+    photo.alt=entry.alts?.[index] || (detail?'Деталь дня':'Ключевой снимок дня');
+    stage.toggleAttribute('data-detail',detail);
+    bed?.setLevel(montage?.mode==='quiet' ? [1,0,.32][phase] : [1,.55,.85][phase]);
+  }
   function writeQuote(value){quote.textContent=endQuote.textContent='«'+value+'»';reveal.classList.toggle('long',value.length>110);}
   writeQuote(scene.quote);
   const audio=new Audio();
@@ -150,7 +169,7 @@ export function mountPlayer(host,entry,autoplay=false) {
         button.toggleAttribute('data-passed',index<phase);
       });
       reveal.setAttribute('aria-hidden',String(phase!==1));
-      bed?.duck(phase===1);
+      renderMontage(phase);
       if(phase===1)quoteScroll.scrollTop=0;
       endQuote.hidden=phase!==2;
     }
@@ -227,9 +246,19 @@ export function mountPlayer(host,entry,autoplay=false) {
   }
   function stopOriginals(){document.querySelectorAll('audio').forEach(a=>a.pause());}
   audio.addEventListener('play',stopOriginals);
-  display(0);muted();if(autoplay)start();
+  function setMontage(value){
+    scene.montage=sceneMontage(value,entry.photos.length,scene.coverPhotoIndex);
+    const index=scene.montage?.detailIndex ?? scene.coverPhotoIndex;
+    chapters[1].querySelector('img').src=entry.photos[index];
+    renderMontage(currentPhase);
+  }
+  display(0);setMontage(scene.montage);muted();if(autoplay)start();
   return {
     pause,
+    setMontage,
+    setAmbienceEnabled,
+    ambienceEnabled:()=>bed?.enabled===true,
+    screen(trigger){openScreen(trigger);seek(0);start();},
     seek(seconds){pause();seek(seconds);},
     audition(fromSeconds,endSeconds){
       const from=Math.max(0,fromSeconds), to=Math.min(end,endSeconds);
@@ -246,6 +275,7 @@ export function mountPlayer(host,entry,autoplay=false) {
       bed?.destroy();
       bed=ambienceBed(list);bed?.mute(audio.muted);
       bedToggle.hidden=!bed;bedLabel();
+      renderMontage(currentPhase);
       if(bed && playing)bed.start();
     },
     destroy(){

@@ -173,3 +173,12 @@ img { display: block; max-width: 100%; }
   .action, .action svg, .watch-link svg, .memory-choice, .motion-toggle, .scene-effects { transition: none; }
   .action:hover svg, .watch-link:hover svg { transform: none; }
 }
+
+.hero-play {
+  position: absolute; z-index: 4; inset: auto auto 12px 12px;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  padding: 8px 15px; border: 1px solid var(--line-dark); border-radius: 24px;
+  color: var(--sheet); background: var(--album); font: 700 14px/1.2 var(--sans);
+}
+.hero-play:hover { color: var(--album); background: var(--light-accent); }
+.hero-play[hidden] { display: none; }

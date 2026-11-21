@@ -35,8 +35,8 @@ export async function openShare(entry, popup, dialog) {
     box.hidden = !link.url; createRow.hidden = Boolean(link.url);
     if (link.url) url.value = link.url;
     state.innerHTML = link.url
-      ? 'По этой ссылке день «' + h(entry.title) + '» откроется у любого, кто её получит. Остальные дни и ваша почта не видны.'
-      : 'Ссылки пока нет. Сцену дня увидит любой, у кого будет ссылка, пока вы её не отзовёте.';
+      ? 'По этой ссылке день «' + h(entry.title) + '» откроется у любого, кто её получит. Доступны полный рассказ, все фотографии и звук этого дня.'
+      : 'По ссылке любой получатель сможет открыть сцену и получить полный рассказ, все фотографии и звук этого дня. Ссылку можно отозвать.';
   };
   const busy = async (button, action) => {
     button.disabled = true; error.textContent = '';
