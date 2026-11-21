@@ -113,6 +113,20 @@ async function run() {
     assert.equal(sent.headers()['x-diary-request'], '1');
     assert.ok(sent.postDataBuffer().length < 700 * 1024);
 
+    // Preparing while a fresh suggestion is in flight must include its result.
+    let release;
+    const delayed=new Promise(resolve=>{release=resolve;});
+    await vision.route('**/api/ambience/suggest',async route=>{
+      await delayed;
+      await route.fulfill({json:{tags:[{id:'rain',confidence:0.95}]}});
+    });
+    await vision.locator('#memory-detail').fill('Вода лилась с крыши.');
+    await vision.locator('#prepare').click();
+    await vision.locator('#prepare[aria-busy="true"]').waitFor();
+    release();
+    await vision.locator('#save').click();
+    await vision.locator('.day-sounds [data-listen="rain"]').waitFor();
+
     // If the service fails, the words of the entry take over.
     const fallback = await context.newPage();
     fallback.on('pageerror', error => errors.push(error.message));

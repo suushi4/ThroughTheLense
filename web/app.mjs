@@ -455,24 +455,25 @@ async function formPage(stamp,editing){
     };
   }
   function chooseAmbience(list){d.ambience=sanitizeAmbience(list);d.ambienceSource='manual';ambienceRequest++;changed();renderAmbience();}
-  async function suggestSounds(){
+  function suggestSounds(){
     if(d.ambienceSource==='manual')return;
     const cover=d.photos[d.coverIndex]||null, text=recordedText(d);
-    const key=(cover?.name||'')+'|'+(cover?.size||'')+'|'+text;
     if(!cover && !text){
       suggestedFor=null;ambienceRequest++;
       d.ambience=null;d.ambienceSource='';
       renderAmbience();
       return;
     }
-    if(key===suggestedFor)return;
-    suggestedFor=key;
+    if(suggestedFor?.cover===cover && suggestedFor.text===text)return suggestedFor.result;
     const req=++ambienceRequest;
     if(d.ambience==null)renderAmbience();
-    const {ids,source}=await suggestAmbience({text,cover});
-    if(!current() || req!==ambienceRequest || d.ambienceSource==='manual')return;
-    d.ambience=ids.map(id=>({id,gain:ambienceGain()}));d.ambienceSource=source;
-    persistDraft(d);renderAmbience();
+    const result=suggestAmbience({text,cover}).then(({ids,source})=>{
+      if(!current() || req!==ambienceRequest || d.ambienceSource==='manual')return;
+      d.ambience=ids.map(id=>({id,gain:ambienceGain()}));d.ambienceSource=source;
+      persistDraft(d);renderAmbience();
+    });
+    suggestedFor={cover,text,result};
+    return result;
   }
   // markTracks shows which diary track is chosen and, as a hint only, which
   // one is closest in tone to the cover. Nothing is chosen without a click.
@@ -609,7 +610,7 @@ async function formPage(stamp,editing){
     for(const name of ['date','story','photos','song'])errorText(name,problems[name]||'');
     const first=Object.keys(problems)[0];if(first){$('#'+first).focus();return;}
     const rev=d.revision;formBusy=true;syncButton();
-    const [photo,audio]=await Promise.allSettled([analyzePhotos(d.photos,d.coverIndex),analyzeAudio(d.audio)]);
+    const [photo,audio]=await Promise.allSettled([analyzePhotos(d.photos,d.coverIndex),analyzeAudio(d.audio),suggestSounds()]);
     if(!current()||rev!==d.revision)return;
     formBusy=false;syncButton();
     if(photo.status==='rejected')errorText('photos',photo.reason.message);

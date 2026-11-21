@@ -85,7 +85,7 @@ async function reducedJPEG(file) {
 
 let visionAvailable;
 async function visionEnabled() {
-  return visionAvailable ??= fetch('/api/runtime', {cache: 'no-store'})
+  return visionAvailable ??= fetch('/api/runtime', {cache: 'no-store',signal:AbortSignal.timeout(2500)})
     .then(response => response.ok ? response.json() : {})
     .then(config => config.ambience === 'vision')
     .catch(() => false);
@@ -97,7 +97,7 @@ export async function suggestAmbience({text, cover}) {
   if (cover && await visionEnabled()) {
     try {
       const response = await fetch('/api/ambience/suggest', {
-        method: 'POST', cache: 'no-store',
+        method: 'POST', cache: 'no-store', signal:AbortSignal.timeout(6000),
         headers: {'X-Diary-Request': '1', 'Content-Type': 'image/jpeg'},
         body: await reducedJPEG(cover)
       });
