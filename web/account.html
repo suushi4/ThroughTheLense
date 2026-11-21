@@ -22,8 +22,8 @@
     <div class="account-panel">
       <a class="wordmark" href="/" translate="no"><img alt="" src="/brand-mark.svg" width="36" height="36"><span>ThroughThe<em>Lense</em></span></a>
       <section class="account-content" aria-labelledby="account-heading">
-        <h1 id="account-heading" tabindex="-1">Войти в дневник</h1>
-        <p id="account-intro">Ваши дни доступны в вашем аккаунте.</p>
+        <h1 id="account-heading" tabindex="-1">Аккаунт</h1>
+        <p id="account-intro" hidden></p>
         <form id="credentials" hidden>
           <label for="email">Электронная почта</label>
           <input type="email" id="email" name="email" autocomplete="email" spellcheck="false" required maxlength="254">
@@ -40,7 +40,7 @@
         </div>
         <p id="auth-status" class="auth-status" role="status">Открываем аккаунт…</p>
         <button class="action account-retry" id="auth-retry" type="button" hidden>Повторить загрузку</button>
-        <a class="guest-link" href="/journal.html#archive">Продолжить без аккаунта</a>
+        <a class="guest-link" href="/journal.html#archive" hidden>Продолжить без аккаунта</a>
       </section>
       <footer class="account-links">
         <nav aria-label="Ссылки в подвале"><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></nav>
