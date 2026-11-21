@@ -115,8 +115,23 @@ async function run() {
     assert.deepEqual(await chips(fallback), ['Улица']);
     assert.match(await fallback.locator('#ambience-hint').innerText(), /по словам записи/);
 
+    // Diary tracks: the ten CC0 recordings work like the examples.
+    // Start with empty guest storage so the demo loader needs no confirmation.
+    const tracks = await browser.newPage({baseURL: base, viewport: {width: 1280, height: 900}});
+    tracks.on('pageerror', error => errors.push(error.message));
+    await editor(tracks);
+    assert.equal(await tracks.locator('[data-track]').count(), 13);
+    await tracks.locator('.track-fit:not([hidden])').waitFor();
+    await tracks.locator('[data-track="track-night-talk"]').click();
+    await tracks.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Ночной разговор'));
+    await tracks.locator('#prepare').click();
+    await tracks.locator('#save').waitFor();
+    assert.match(await tracks.locator('.page-heading p').innerText(), /Ночной разговор/);
+    await tracks.getByRole('button', {name: 'Воспроизвести', exact: true}).click();
+    await tracks.getByRole('button', {name: 'Пауза', exact: true}).waitFor();
+
     assert.deepEqual(errors, []);
-    console.log('Passed: text suggestions, manual choice sticks, player bed and switch, save and reload, export and import, unknown ids dropped, old copies, photo suggestions, service failure fallback.');
+    console.log('Passed: diary tracks, text suggestions, manual choice sticks, player bed and switch, save and reload, export and import, unknown ids dropped, old copies, photo suggestions, service failure fallback.');
   } finally {
     await browser.close();
     fs.rmSync(dir, {recursive: true, force: true});
