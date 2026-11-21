@@ -27,6 +27,28 @@ python3 serve.py
 
 Go-сервер из `backend/` раздаёт собранный `dist/` и реализует тот же HTTP API, что `account_server.py`, поэтому фронтенд работает с ним без изменений. Образ собирается по `Dockerfile`, настройки Railway лежат в `railway.toml`. SQLite и копии дней хранятся на томе `/data`.
 
+### Деплой на Railway
+
+Рабочий адрес: <https://throughthelense-production.up.railway.app>. Проект `throughthelense`, сервис `throughthelense`, окружение `production`. Том `throughthelense-volume` смонтирован в `/data` (500 МБ на trial), один экземпляр сервиса.
+
+Передеплой текущего каталога (Railway собирает `Dockerfile` у себя):
+
+```sh
+railway login --browserless   # один раз
+railway link                  # один раз: проект throughthelense, сервис throughthelense
+railway up --ci               # сборка и выкладка, логи в терминале
+railway logs --deployment     # логи запущенного контейнера
+railway redeploy -y           # перезапуск последней сборки без загрузки кода
+```
+
+Переменные сервиса: `PORT=8080`, `DATA_DIR=/data`, `WEB_DIR=/app/dist`, `PUBLIC_BASE_URL` и `SITE_ORIGIN` равны публичному адресу, `TRUST_PROXY=1`. `SITE_ORIGIN` объявлен в `Dockerfile` как `ARG`, поэтому попадает в сборку `dist/`. Если домен меняется, обновите обе переменные и выполните `railway up --ci`. Проверка здоровья обращается к `/api/runtime` (`railway.toml`).
+
+Проверка живого адреса из корня проекта:
+
+```sh
+TTL_TEST_URL=https://throughthelense-production.up.railway.app npm run test:experience
+```
+
 Локально тот же сервер запускается так (по умолчанию слушает только `127.0.0.1:8080`):
 
 ```sh

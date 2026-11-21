@@ -16,6 +16,20 @@
 
 `Dockerfile` собирает `dist/` командой `npm run build` с `SITE_ORIGIN`, затем статический Go-бинарь, и задаёт `WEB_DIR=/app/dist` и `DATA_DIR=/data`. Том монтируется в `/data`. SQLite рассчитана на один экземпляр сервиса.
 
+### Деплой на Railway
+
+Go-сервер развёрнут на <https://throughthelense-production.up.railway.app>: проект и сервис `throughthelense`, окружение `production`. Railway собирает `Dockerfile` (`railway.toml`: сборщик `DOCKERFILE`, проверка `/api/runtime`, перезапуск `ON_FAILURE`). Том смонтирован в `/data`. В нём лежат `journal.sqlite` и каталог `copies/`, и они переживают `railway redeploy`. При первом старте сервер сам создаёт пустую базу.
+
+| Особенность Railway | Как учтено |
+| --- | --- |
+| Проверка здоровья приходит с `Host: healthcheck.railway.app` | `GET /api/runtime` отвечает при любом `Host`. Остальные `/api/*` требуют `PUBLIC_BASE_URL` |
+| Переменные сервиса попадают в сборку только через `ARG` | `ARG SITE_ORIGIN` в стадии сборки `dist/` |
+| Том монтируется с владельцем root, инструкция `VOLUME` не поддерживается | Финальный образ `distroless/static` от root, без `VOLUME` |
+| Прокси добавляет адрес клиента в конец `X-Forwarded-For` | С `TRUST_PROXY=1` лимиты попыток считаются по последнему адресу. Более ранние адреса присылает клиент |
+| Edge маршрутизирует по `Host` | Запрос с чужим `Host` получает 404 от Railway и не доходит до приложения |
+
+Передеплой: `railway up --ci` из корня проекта. Перезапуск без новой сборки: `railway redeploy -y`. SQLite рассчитана на один экземпляр, поэтому реплики не добавляйте. `railway.toml` работает до 01.12.2026, после этой даты Railway предлагает перейти на `railway config migrate`.
+
 ## Где искать код
 
 | Файл | Ответственность |
