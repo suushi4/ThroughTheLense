@@ -9,6 +9,7 @@ export function mountAtmosphere(opening, motion) {
   const context = canvas.getContext('2d');
   if (!context) return () => {};
 
+  const art = canvas.parentElement;
   const toggle = opening.querySelector('.motion-toggle');
   const hover = matchMedia('(hover: hover) and (pointer: fine)');
   let mood = moods.street;
@@ -24,8 +25,8 @@ export function mountAtmosphere(opening, motion) {
   }
 
   function rescale() {
-    const {width, height} = opening.getBoundingClientRect();
-    const scale = Math.min(0.9, 1060 / width);
+    const {clientWidth: width, clientHeight: height} = art;
+    const scale = Math.min(0.9, 760 / width);
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
     populate();
@@ -42,14 +43,14 @@ export function mountAtmosphere(opening, motion) {
     lightX += (targetX - lightX) * 0.18;
     lightY += (targetY - lightY) * 0.18;
     const clock = time / 1000;
-    opening.style.setProperty('--hero-dx', ((lightX - 0.72) * 19).toFixed(2) + 'px');
-    opening.style.setProperty('--hero-dy', ((lightY - 0.5) * 13).toFixed(2) + 'px');
+    art.style.setProperty('--hero-dx', ((lightX - 0.72) * 14).toFixed(2) + 'px');
+    art.style.setProperty('--hero-dy', ((lightY - 0.5) * 10).toFixed(2) + 'px');
     context.clearRect(0, 0, width, height);
 
     const gx = (lightX + 0.033 * Math.sin(clock * 0.6)) * width;
     const gy = (lightY + 0.06 * Math.cos(clock * 0.44)) * height;
     const glow = context.createRadialGradient(gx, gy, 0, gx, gy, Math.max(1, width * 0.30));
-    glow.addColorStop(0, 'rgba(' + mood.light + ',0.24)');
+    glow.addColorStop(0, 'rgba(' + mood.light + ',0.18)');
     glow.addColorStop(1, 'rgba(' + mood.light + ',0)');
     context.fillStyle = glow;
     context.fillRect(0, 0, width, height);
@@ -92,25 +93,25 @@ export function mountAtmosphere(opening, motion) {
     }
     if (!motion.matches) {
       context.clearRect(0, 0, canvas.width, canvas.height);
-      opening.style.removeProperty('--hero-dx');
-      opening.style.removeProperty('--hero-dy');
+      art.style.removeProperty('--hero-dx');
+      art.style.removeProperty('--hero-dy');
     }
   }
 
-  opening.addEventListener('pointermove', event => {
+  art.addEventListener('pointermove', event => {
     if (!frame || !hover.matches || event.pointerType !== 'mouse') return;
-    const bounds = opening.getBoundingClientRect();
+    const bounds = art.getBoundingClientRect();
     targetX = Math.min(0.94, Math.max(0.35, (event.clientX - bounds.left) / bounds.width));
     targetY = (event.clientY - bounds.top) / bounds.height;
   });
-  opening.addEventListener('pointerleave', () => { targetX = 0.72; targetY = 0.5; });
+  art.addEventListener('pointerleave', () => { targetX = 0.72; targetY = 0.5; });
   toggle.addEventListener('click', () => { paused = !paused; update(); });
   motion.addEventListener('change', update);
   document.addEventListener('visibilitychange', update);
   const viewport = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update(); });
-  viewport.observe(opening);
+  viewport.observe(art);
   const size = new ResizeObserver(rescale);
-  size.observe(opening);
+  size.observe(art);
   rescale();
   update();
   return name => {

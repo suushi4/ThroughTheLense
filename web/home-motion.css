@@ -1,0 +1,35 @@
+.home-page {
+  --tone-paper: 247 244 235;
+  --tone-demos: 227 234 208;
+  --tone-making: 243 227 213;
+  --tone-music: 223 233 221;
+  --tone-closing: 239 213 182;
+  --home-paper: rgb(var(--tone-paper));
+  background-color: var(--home-paper);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-page [data-revealing] {
+    --reveal-offset: 1.375rem;
+    --reveal-opacity: .68;
+    --reveal-delay: 0ms;
+    animation: home-reveal 620ms cubic-bezier(.2,.65,.3,1) var(--reveal-delay) backwards;
+  }
+
+  .home-page [data-revealing][data-reveal="media"] {
+    --reveal-offset: 2rem;
+    --reveal-opacity: .55;
+  }
+
+  .home-page [data-revealing]:is(a, button, details, [data-reveal="controls"]) {
+    --reveal-offset: 0px;
+  }
+
+  .home-page [data-revealing][data-reveal-delay="1"] { --reveal-delay: 75ms; }
+  .home-page [data-revealing][data-reveal-delay="2"] { --reveal-delay: 150ms; }
+
+  @keyframes home-reveal {
+    from { opacity: var(--reveal-opacity); translate: 0 var(--reveal-offset); }
+    to { opacity: 1; translate: 0 0; }
+  }
+}

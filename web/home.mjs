@@ -75,21 +75,12 @@ if (journalRoutes.test(location.hash)) {
 
   const changes = new MutationObserver(syncLight);
 
-  function changeBackdrop(name) {
-    const photo = opening.querySelector('[data-hero-photo="' + name + '"]');
-    if (!photo.hasAttribute('src')) photo.src = photo.dataset.src;
-    photo.decode().then(() => {
-      if (opening.dataset.memory !== name) return;
-      opening.querySelector('[data-hero-photo][data-active]')?.removeAttribute('data-active');
-      photo.setAttribute('data-active', '');
-    }).catch(() => {});
-  }
-
   async function replacePrint(choice, entry, direction, dateLabel) {
     const thumbnail = choice.querySelector('img');
     if (printWindow.lastElementChild.src === thumbnail.src) return;
     const photo = thumbnail.cloneNode();
     photo.removeAttribute('loading');
+    photo.alt = entry.alts[entry.scene.coverPhotoIndex];
     try { await photo.decode(); } catch { return; }
     if (selected !== choice) return;
 
@@ -107,6 +98,7 @@ if (journalRoutes.test(location.hash)) {
       printCaption.replaceChildren(details);
       return;
     }
+    previous.setAttribute('aria-hidden', 'true');
     printWindow.replaceChildren(previous, photo);
     previousDetails.setAttribute('aria-hidden', 'true');
     printCaption.replaceChildren(previousDetails, details);
@@ -155,7 +147,6 @@ if (journalRoutes.test(location.hash)) {
 
     opening.dataset.memory = room.dataset.memory = name;
     setAtmosphere(name);
-    changeBackdrop(name);
     replacePrint(choice, entry, direction, dateLabel);
     room.querySelector('h2').textContent = entry.title;
     date.dateTime = entry.dayDate;

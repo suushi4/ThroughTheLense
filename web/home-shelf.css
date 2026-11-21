@@ -11,7 +11,7 @@
   background: var(--sheet);
 }
 .home-shelf-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-.home-shelf-head h3 { font: 500 22px/1.2 var(--display); }
+.home-shelf-head h3 { font: 800 22px/1.2 var(--display); letter-spacing: -.03em; }
 .home-shelf-head p, .home-shelf-status { color: var(--muted); font-size: 14px; }
 .home-shelf-head p { margin-top: 4px; }
 .home-shelf-status:empty { display: none; }

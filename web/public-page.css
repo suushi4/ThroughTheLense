@@ -1,10 +1,15 @@
-.public-mast { min-height: 72px; display: flex; align-items: center; }
-.public-page { max-width: 780px; min-height: 56vh; padding-block: clamp(36px,7vw,92px); }
-.public-page h1 { font-size: clamp(36px,5.5vw,72px); font-weight: 650; letter-spacing: -.06em; line-height: 1; overflow-wrap: anywhere; }
-.public-page h2 { margin-top: 30px; font-size: 22px; line-height: 1.2; }
-.public-page p { margin-top: 8px; color: var(--muted); }
-.public-page .page-lead { margin-top: 20px; font-size: 18px; }
-.public-page .action { margin-top: 16px; }
+.public-mast { min-height: 64px; display: flex; align-items: center; }
+.public-page { max-width: 860px; min-height: 64svh; padding-block: clamp(40px,7vw,100px); }
+.public-page h1 { padding-bottom: clamp(16px,3vw,32px); border-bottom: 1px solid var(--line-strong); font: 800 clamp(36px,6vw,78px)/1.02 var(--display); letter-spacing: -.04em; overflow-wrap: anywhere; text-wrap: balance; }
+.public-page h2 { margin-top: 32px; font: 780 clamp(22px,2.2vw,28px)/1.18 var(--display); letter-spacing: -.03em; }
+.public-page p { max-width: 68ch; margin-top: 8px; color: var(--muted); line-height: 1.6; }
+.public-page .page-lead { margin-top: 24px; font-size: clamp(17px,2vw,22px); color: var(--ink); }
+.public-page .action { margin-top: 16px; border-radius: 24px; }
 .settings-button { border-color: #7a8877; background: var(--sheet); }
 .settings-button:hover { background: var(--wash); }
 .public-page p a { text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .public-page h1, .public-page .page-lead { animation: enter-public-page 550ms cubic-bezier(.22,.8,.25,1) both; }
+  .public-page .page-lead { animation-delay: 60ms; }
+  @keyframes enter-public-page { from { opacity: .66; translate: 0 12px; } }
+}
