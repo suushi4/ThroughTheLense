@@ -30,7 +30,7 @@ type Config struct {
 func Load() (Config, error) {
 	c := Config{
 		Port:          env("PORT", "8080"),
-		DataDir:       env("DATA_DIR", env("TTL_DATA_DIR", "data")),
+		DataDir:       DataDir(),
 		WebDir:        env("WEB_DIR", defaultWebDir()),
 		PublicBaseURL: strings.TrimRight(env("PUBLIC_BASE_URL", ""), "/"),
 		SupabaseURL:   env("SUPABASE_URL", ""),
@@ -65,6 +65,9 @@ func Load() (Config, error) {
 	}
 	return c, nil
 }
+
+// DataDir is DATA_DIR, then TTL_DATA_DIR (serve.py's name), then "data".
+func DataDir() string { return env("DATA_DIR", env("TTL_DATA_DIR", "data")) }
 
 // Secure reports whether the site is served over HTTPS.
 func (c Config) Secure() bool { return strings.HasPrefix(c.PublicBaseURL, "https://") }
