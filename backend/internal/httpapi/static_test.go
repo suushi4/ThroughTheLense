@@ -24,6 +24,7 @@ func testWeb(t *testing.T) string {
 		"media/a.wav":  strings.Repeat("x", 100),
 		".env":         "SECRET=1",
 		"sub/page.txt": "hi",
+		"shared.html":  "<!doctype html><html><head><title>День</title></head><body></body></html>",
 	}
 	for name, body := range files {
 		p := filepath.Join(dir, name)

@@ -30,6 +30,9 @@ func (s *Server) days(w http.ResponseWriter, r *http.Request, user store.User) e
 	if r.URL.Path == "/api/days" && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 		return s.listDays(w, r, user)
 	}
+	if m := sharePath.FindStringSubmatch(r.URL.Path); m != nil {
+		return s.share(w, r, user, m[1])
+	}
 	m := dayPath.FindStringSubmatch(r.URL.Path)
 	if m == nil {
 		return errNotFound

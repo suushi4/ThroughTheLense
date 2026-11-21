@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"throughthelense/backend/internal/auth"
@@ -24,6 +25,7 @@ type Server struct {
 	copies  *copies.Dir
 	limits  map[string]*auth.Limiter
 	uploads chan struct{}
+	checked sync.Map // revision -> copycheck.Meta that passed the strict check
 }
 
 // postLimits mirrors POST_LIMITS in account_server.py (requests per minute).
@@ -140,6 +142,9 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		return s.credentials(w, r, p == "/api/register")
 	case p == "/api/logout" && r.Method == http.MethodPost:
 		return s.logout(w, r)
+	}
+	if strings.HasPrefix(p, "/api/public/") {
+		return s.public(w, r)
 	}
 	user, signedIn, err := s.sessionUser(r)
 	if err != nil {
