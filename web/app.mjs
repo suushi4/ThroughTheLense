@@ -5,8 +5,7 @@ import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from 
 import {demos,exampleFile} from './demo.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
-import {account} from './account.mjs';
-import {openShare} from './share.mjs';
+import {openShare,shareSupported} from './share.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
@@ -771,7 +770,7 @@ async function route(){
 if(!guestMode){
   try {
     accountUser=await connectDiary();
-    shareable=Boolean(accountUser) && (await account()).mode==='local';
+    shareable=Boolean(accountUser) && await shareSupported();
     if(accountUser){
       document.querySelector('#journal-account').setAttribute('aria-label','Ваш аккаунт');
       document.querySelector('#storage-note').textContent='Личные дни хранятся в вашем аккаунте';

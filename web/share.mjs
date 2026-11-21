@@ -1,4 +1,4 @@
-// «Поделиться»: a public read-only link to one account day (Go server only).
+// «Поделиться»: a public read-only link to one account day, where the server supports it.
 import {escapeHTML as h} from './ui.mjs';
 
 async function call(id, method) {
@@ -8,6 +8,15 @@ async function call(id, method) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw Error(data.message || 'Сервис ссылок недоступен.');
   return data;
+}
+
+// shareSupported: only servers that advertise "share": true in /api/runtime
+// (the Go server for days it stores) get the button.
+export async function shareSupported() {
+  try {
+    const response = await fetch('/api/runtime', {cache: 'no-store'});
+    return response.ok && (await response.json()).share === true;
+  } catch { return false; }
 }
 
 // openShare fills the journal dialog via popup(contents,label) and wires it.
