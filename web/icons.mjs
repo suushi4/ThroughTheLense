@@ -4,6 +4,7 @@ const paths = {
   aperture:'<circle cx="12" cy="12" r="9.4"/><path d="m13.6 2.8 5.1 8.8m2.4 2.1H11m7.1 5.6-5.1-8.8m-2.6 10.7-5.1-8.8M3 10.4h10.2M6 4.7l5.1 8.8"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', play:'<path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none"/>',
   pause:'<path d="M8.5 6v12m7-12v12" stroke-width="3"/>',
+  loader:'<path d="M20 12a8 8 0 1 1-8-8"/>',
   replay:'<path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/>',
   arrow:'<path d="M4 12h15m-6-6 6 6-6 6"/>', back:'<path d="M20 12H5m6 6-6-6 6-6"/>',
   music:'<path d="M9 17V6l11-2v11M9 9l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>',

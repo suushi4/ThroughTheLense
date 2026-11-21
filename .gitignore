@@ -12,3 +12,10 @@ __pycache__/
 .env.*
 Unknown*.pdf
 docs/demo/*.mp4
+
+.ttl-data/
+.vercel/
+/supabase/.temp/
+
+dist/
+/web/assets/scene-effects.mjs

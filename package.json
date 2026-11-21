@@ -3,9 +3,22 @@
   "private": true,
   "scripts": {
     "test": "node --test scene.test.mjs",
-    "test:browser": "node tests/browser.cjs"
+    "test:browser": "node tests/browser.cjs",
+    "build": "node scripts/build.mjs",
+    "build:visuals": "node scripts/build-visuals.mjs",
+    "test:experience": "node tests/experience.cjs"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "1.65.0"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.2",
+    "@shadergradient/react": "2.4.20",
+    "@supabase/supabase-js": "2.119.2",
+    "liquid-glass-react": "1.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "0.169.0"
   }
 }

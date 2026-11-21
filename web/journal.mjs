@@ -1,8 +1,12 @@
 let connection;
+let archiveName = 'ThroughTheLense';
+export function selectArchive(owner) {
+  archiveName = 'ThroughTheLense-' + owner;
+}
 function openArchive() {
   if (!connection) {
     connection = new Promise((resolve,reject)=>{
-      const req=indexedDB.open('ThroughTheLense',2);
+      const req=indexedDB.open(archiveName,2);
       let blocked=false;
       req.onblocked=()=>{
         blocked=true;
@@ -74,6 +78,9 @@ export async function getDraft(key) {
   if(!row)return undefined;
   return {...row,photos:row.photos.map(unpackMedia),audio:row.audio && unpackMedia(row.audio)};
 }
+export async function hasDraft(key) {
+  return (await read('drafts','getKey',key)) !== undefined;
+}
 export async function saveDraft(key,draft) {
   const snapshot={...draft};
   const [photos,audio,db]=await Promise.all([
@@ -95,6 +102,15 @@ export async function removeDay(id) {
     tx.oncomplete=resolve;
     tx.onabort=()=>reject(tx.error || Error('Не удалось удалить день.'));
     for(const name of ['entries','content','drafts'])tx.objectStore(name).delete(id);
+  });
+}
+export async function removeDraft(key) {
+  const db=await openArchive();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('drafts','readwrite');
+    tx.oncomplete=resolve;
+    tx.onabort=()=>reject(tx.error);
+    tx.objectStore('drafts').delete(key);
   });
 }
 export async function saveDay(entry, thumbnail, draftKey) {

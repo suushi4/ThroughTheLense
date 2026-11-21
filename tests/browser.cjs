@@ -3,7 +3,7 @@ const path = require('node:path');
 let chromium;
 try { ({ chromium } = require('playwright')); }
 catch { ({ chromium } = require('../gstack/node_modules/playwright')); }
-const base = 'http://127.0.0.1:8000/';
+const base = 'http://127.0.0.1:8000/journal.html';
 const media = file => path.join(__dirname, '../web/media', file);
 async function run() {
   const browser = await chromium.launch();
@@ -62,7 +62,7 @@ async function run() {
     await page.waitForSelector('.stage[data-phase="0"]');
     await page.getByRole('button',{name:'Выключить звук'}).click();
     assert.equal(await page.getByRole('button',{name:'Включить звук'}).count(),1);
-    await page.getByRole('link',{name:'Новый день',exact:true}).click();
+    await page.getByRole('link',{name:'Записать день',exact:true}).click();
     await page.getByRole('button',{name:'Посмотреть сцену'}).click();
     assert.ok(await page.locator('#err-story').innerText());
     await page.locator('#story').fill('Сегодня мы гуляли. Мы впервые шли домой без спешки.');
@@ -107,6 +107,17 @@ async function run() {
     await page.locator('#save').waitFor();
     assert.equal(await page.locator('#entry-title').inputValue(),'Наш день у гор');
     assert.equal(await page.locator('#custom-quote').inputValue(),'мы гуляли');
+    const quoteBeforeCompare=await page.locator('#chosen-quote').innerText();
+    const coverBeforeCompare=await page.locator('.stage img').getAttribute('src');
+    await page.locator('.track-comparison summary').click();
+    await page.locator('#compare-track').click();
+    await page.getByRole('button',{name:'Вернуть «Два стаканчика»'}).waitFor();
+    assert.equal(await page.locator('#quote-cue').inputValue(),'2.7');
+    assert.equal(await page.locator('#chosen-quote').innerText(),quoteBeforeCompare);
+    assert.equal(await page.locator('.stage img').getAttribute('src'),coverBeforeCompare);
+    await page.locator('#compare-track').click();
+    await page.getByRole('button',{name:'Поставить «Вечерний маршрут»'}).waitFor();
+    assert.equal(await page.locator('#quote-cue').inputValue(),'4.6');
     // Abort after the first write and before the second write can finish.
     await page.evaluate(()=>{
       const put=IDBObjectStore.prototype.put;
@@ -128,14 +139,16 @@ async function run() {
     });
     assert.deepEqual(aborted,[0,0]);
     await page.locator('#save').dblclick();
-    await page.waitForURL('**/#day/*');
+    await page.waitForURL('**#day/*');
     const savedURL=page.url();
     await page.reload();
     await page.getByRole('heading',{name:'Наш день у гор'}).waitFor();
+    const originalAudio=page.getByRole('main').locator('audio[aria-label="Исходный трек"]');
+    assert.equal(await originalAudio.getAttribute('src'),null);
     await page.locator('.materials summary').click();
     assert.equal(await page.locator('.original').innerText(),'Сегодня мы гуляли. Мы впервые шли домой без спешки.');
     assert.equal(await page.locator('.source-photos img').count(),1);
-    assert.equal(await page.getByRole('main').locator('audio[aria-label="Исходный трек"]').evaluate(a=>new URL(a.src).protocol),'blob:');
+    await page.locator('.materials audio[src^="blob:"]').waitFor();
     await page.getByRole('button',{name:'Открыть снимок 1'}).click();
     assert.ok(await page.getByRole('dialog',{name:'Фотография дня'}).isVisible());await page.keyboard.press('Escape');
     const readStored=()=>page.evaluate(async()=>{
@@ -151,7 +164,7 @@ async function run() {
     await page.waitForFunction(()=>document.querySelector('#photo-list')?.children.length===2);
     await page.locator('#date').fill('2026-11-18');
     await page.locator('#prepare').click();await page.locator('#save').click();
-    await page.waitForURL('**/#day/*');assert.notEqual(page.url(),savedURL);
+    await page.waitForURL('**#day/*');assert.notEqual(page.url(),savedURL);
     const second=await readStored();assert.equal(second.count,2);
     assert.deepEqual(second.rows.map(x=>x.dayDate),['2026-11-18','2026-11-18']);
     assert.ok(second.rows.some(x=>x.cue===2.7));
@@ -186,7 +199,7 @@ async function run() {
     await phone.getByRole('button',{name:'Мои дни',exact:true}).click();
     await phone.getByRole('heading',{name:'Ваш первый день'}).waitFor();
     assert.equal(await phone.locator('.spread').isVisible(),false);
-    await phone.locator('.create-link').click();await phone.locator('#fill-demo').click();
+    await phone.getByRole('link',{name:'Записать день',exact:true}).click();await phone.locator('#fill-demo').click();
     await phone.waitForFunction(()=>document.querySelector('#photo-list')?.children.length===2);
     await phone.locator('[data-cover="1"]').click();
     assert.equal(await phone.locator('#proof-image').getAttribute('src'),await phone.locator('[data-cover="1"] img').getAttribute('src'));
@@ -195,7 +208,7 @@ async function run() {
     await phone.locator('#quote-cue').fill('3.5');
     await phone.locator('#return-cue').fill('8.4');
     assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth),360);
-    await phone.locator('#save').click();await phone.waitForURL('**/#day/*');await phone.reload();
+    await phone.locator('#save').click();await phone.waitForURL('**#day/*');await phone.reload();
     const savedCover=await phone.evaluate(async()=>{
       const {getDay}=await import('./journal.mjs');
       const entry=await getDay(location.hash.slice(5));

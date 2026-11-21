@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f2f1e9">
+  <meta name="description" content="Как ThroughTheLense хранит записи, данные аккаунта и настройки аналитики.">
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/home.css">
+  <link rel="stylesheet" href="/public-page.css">
+  <link rel="stylesheet" href="/consent.css">
+  <script type="module" src="/consent.mjs"></script>
+  <title>Политика конфиденциальности · ThroughTheLense</title>
+</head>
+<body>
+  <a class="skip" href="#content">К содержанию</a>
+  <header class="home-mast"><div class="edge public-mast">
+    <a class="wordmark" href="/"><img alt="" src="/brand-mark.svg" width="36" height="36"><span>ThroughThe<em>Lense</em></span></a>
+  </div></header>
+  <main id="content" class="edge public-page" tabindex="-1">
+    <h1>Политика конфиденциальности</h1>
+      <p class="page-lead">В дневнике можно хранить фотографии, текст и музыку. Где они сохраняются, зависит от того, вошли ли вы в аккаунт.</p>
+      <h2>Записи и черновики</h2>
+      <p>Гостевые дни и черновики сохраняются в браузере. Если вы вошли, готовые дни хранятся в аккаунте. У локальной версии база находится на устройстве с сервером, а у версии с подключённым Supabase база и файлы хранятся в закрытом облачном хранилище. По данным входа система определяет владельца записи.</p>
+      <h2>Вход и локальное хранилище</h2>
+      <p>Для аккаунта нужна электронная почта. Сессия локального аккаунта поддерживается служебной cookie, а приложение Supabase хранит сессию в браузере. Эти данные используются для входа и доступа к своим дням. Выбор по аналитике мы запоминаем в браузере отдельно.</p>
+      <h2 id="analytics">Аналитика</h2>
+      <p>С вашего согласия мы считаем посещения главной. В локальной версии хранится только суммарное число посещений по датам. В облачной версии при подключении используется Vercel Web Analytics. Мы не передаём в аналитику записи дневника, вложения или адрес электронной почты.</p>
+      <button type="button" class="action settings-button" data-consent-settings hidden>Настройки аналитики</button>
+      <p class="consent-status" role="status"></p>
+      <h2>Копирование и удаление</h2>
+      <p>В каждой своей записи можно скачать копию или удалить день. Для удаления гостевого архива и черновиков можно очистить данные сайта в браузере. Если вам нужно удалить аккаунт или уточнить, где размещён дневник, свяжитесь с командой, которая предоставила ссылку на проект.</p>
+
+  </main>
+  <footer class="home-foot edge">
+    <nav aria-label="Ссылки в подвале"><a href="/">Главная</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></nav>
+  </footer>
+</body>
+</html>
