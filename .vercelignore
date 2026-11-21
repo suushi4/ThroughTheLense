@@ -1,0 +1,12 @@
+.agents/
+.claude/
+.codex/
+.gstack/
+.taste-skill/
+.ttl-data/
+docs/
+gstack/
+node_modules/
+dist/
+.env*
+Unknown*.pdf

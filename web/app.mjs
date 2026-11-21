@@ -1,15 +1,21 @@
 import {icon} from './icons.mjs';
 import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
 import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues} from './scene.mjs';
-import {getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './journal.mjs?v=2';
+import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
 import {demos,exampleFile} from './demo.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
+const query=new URLSearchParams(location.search);
+const guestMode=query.get('mode')==='guest';
+const requestedExample=query.get('example');
+const examplePreset=demos.find(day=>day.id===requestedExample);
 let turn=0, urls=[], player=null, draft=null, preview=null, filter=null, archiveQuery='', toastTimer, playOnOpen='', visited=false;
 let draftWrites=Promise.resolve();
+let accountUser=null;
+let archiveReturn=null;
 const pendingDrafts=new Map();
 const back='<a class="back" href="#archive">'+icon('back',16)+' К архиву</a>';
 function localDate(){
@@ -44,7 +50,7 @@ function persistDraft(state){
     catch{message='Черновик пока не сохранён';}
     if(pendingDrafts.get(snapshot.key)===snapshot){
       pendingDrafts.delete(snapshot.key);
-      if(draft===state)draftStatus(message);
+      if(draft===state && $('#save')?.getAttribute('aria-busy')!=='true')draftStatus(message);
     }
   });
 }
@@ -59,16 +65,24 @@ function toast(message){
 function popup(contents,label){
   const body=document.querySelector('#dialog-body');body.innerHTML=contents;dialog.setAttribute('aria-label',label);if(!dialog.open)dialog.showModal();
 }
-document.querySelector('#about-trigger').onclick=()=>popup('<h2>О дневнике</h2><p>Через месяц фотография напомнит, где вы были. Запись сохранит и то, что осталось за кадром.</p><p>Добавьте снимок, несколько строк и песню. На музыкальном акценте появится ваша фраза, а затем вернётся тот же кадр.</p><p>Личные дни хранятся в этом браузере. Очистка данных сайта удаляет архив. Три открытых примера используют постановочные иллюстрации и оригинальную инструментальную музыку.</p>','О дневнике');
-document.querySelector('#foot-about').onclick=()=>document.querySelector('#about-trigger').click();
+document.querySelector('#about-trigger').onclick=()=>popup(
+  '<h2>О дневнике</h2><p>Добавьте снимок, несколько строк и песню. На музыкальном акценте появится ваша фраза, а затем вернётся тот же кадр.</p><p>'+
+  (accountUser?'Записи хранятся в вашем аккаунте. Черновики остаются в этом браузере.':'Гостевые записи остаются в этом браузере. Очистка данных сайта удаляет гостевой архив.')+
+  '</p>','О дневнике');
 document.querySelector('#dialog-close').onclick=()=>dialog.close();
 dialog.onclick=e=>{if(e.target===dialog && e.offsetX>=0 && e.offsetY>=0 && (e.clientX<dialog.getBoundingClientRect().left || e.clientX>dialog.getBoundingClientRect().right || e.clientY<dialog.getBoundingClientRect().top || e.clientY>dialog.getBoundingClientRect().bottom))dialog.close();};
 document.querySelector('.skip').onclick=e=>{e.preventDefault();main.focus();};
+function rememberArchive(trigger){
+  archiveReturn={scroll:window.scrollY,selector:trigger.id?'#'+trigger.id:trigger.classList.contains('feature')?'.feature':'.day-card',href:trigger.getAttribute('href'),
+    featured:$('.feature')?.getAttribute('href')};
+}
 document.addEventListener('click',event=>{
+  if(event.defaultPrevented || event.button!==0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)return;
   const link=event.target.closest('[data-play]');
-  if(link && !event.ctrlKey && !event.metaKey && !event.shiftKey)playOnOpen=link.dataset.play;
+  if(link)playOnOpen=link.dataset.play;
+  const archiveLink=event.target.closest('.day-card, .feature');
+  if(main.dataset.page==='archive' && archiveLink)rememberArchive(archiveLink);
 });
-window.addEventListener('hashchange',route);
 window.addEventListener('pagehide',()=>player?.pause());
 function errorText(id,message){
   const el=$('#err-'+id);
@@ -81,6 +95,18 @@ function errorText(id,message){
 }
 function title(name){document.title=name+' · ThroughTheLense';}
 function heading(name,subtitle=''){return '<div class="page-heading">'+back+'<h1>'+h(name)+'</h1>'+(subtitle?'<p>'+h(subtitle)+'</p>':'')+'</div>';}
+function step(id,number,label){
+  return `<h2 class="step-title" id="step-${id}" data-material="${id}"><span aria-hidden="true" data-number="${number}">${number}</span>${label}<small class="sr-only"></small></h2>`;
+}
+function makePreview(state,composition,photo,timing){
+  const quote=state.quote && state.text.includes(state.quote) ? state.quote : composition.quote;
+  const scene={version:1,coverPhotoIndex:state.coverIndex,quote,palette:photo.palette,...timing,
+    ...(validCues(state.cues,timing.endAtSec)?state.cues:{})};
+  const entry={id:state.id,dayDate:state.dayDate,title:state.title||composition.title,text:state.text,audioName:state.audioName,
+    photoFiles:[...state.photos],audioFile:state.audio,scene};
+  return {entry,quotes:composition.quotes,thumbnail:photo.thumbnail,revision:state.revision,timing};
+}
+const cueLabel=value=>value.toLocaleString('ru',{maximumFractionDigits:2})+' с';
 function card(day) {
   return `<a class="day-card" href="#day/${encodeURIComponent(day.id)}">
     <div class="card-img"><img loading="lazy" src="${h(day.thumbnail)}" alt=""><span class="card-open" aria-hidden="true">${icon('arrow',16)}</span></div>
@@ -94,13 +120,15 @@ function card(day) {
 function featurePage(day) {
   const duration = day.scene?.endAtSec ?? day.duration;
   return `<a class="feature" href="#day/${encodeURIComponent(day.id)}" data-play="${h(day.id)}">
+    <div class="feature-print"><img src="${h(day.thumbnail)}" alt="${h(day.alts?.[day.scene?.coverPhotoIndex ?? 0] || '')}"></div>
     <div class="feature-caption">
-      <div class="feature-date"><span>${day.example ? 'Из примеров' : 'Личный день'}</span><time datetime="${h(day.dayDate)}">${h(dateLabel(day.dayDate))}</time></div>
-      <div class="feature-story"><h2>${h(day.title)}</h2>
-        <p class="feature-track">${icon('music',16)}${h(day.audioName)}</p></div>
-      <span class="open-feature">${icon('play',16)} Смотреть день ${duration ? '<span class="feature-duration">'+timeLabel(duration)+'</span>' : ''}</span>
+      <div class="feature-story">
+        <div class="feature-date"><span>${day.example ? 'Пример' : 'Личный день'}</span><time datetime="${h(day.dayDate)}">${h(dateLabel(day.dayDate))}</time></div>
+        <h2>${h(day.title)}</h2>
+      </div>
+      <span class="open-feature" title="Смотреть день">${icon('play',20)} <span>Смотреть день</span></span>
     </div>
-    <div class="feature-print"><img src="${h(day.thumbnail)}" alt="${h(day.alts?.[0] || '')}" fetchpriority="high"></div>
+    <div class="feature-track">${icon('music',16)}<span>${h(day.audioName)}</span>${duration ? '<time class="feature-duration">'+timeLabel(duration)+'</time>' : ''}</div>
   </a>`;
 }
 
@@ -127,27 +155,32 @@ async function archive(stamp) {
   own=own.map(x=>({...x,thumbnail:objectURL(x.thumbnail)}));
   const days=[...own,...demos].sort((a,b)=>b.dayDate.localeCompare(a.dayDate)||b.id.localeCompare(a.id));
   let featureIndex=0, visible=[];
-  main.innerHTML = `<section class="archive-hero" aria-labelledby="archive-heading">
-    <div class="intro"><div><h1 id="archive-heading">Архив дней</h1><p>Ваши фотографии, музыка и слова о том, что осталось за кадром.</p></div>
-    ${unfinished.value?'<a class="btn secondary" id="resume-draft" href="#new">'+icon('book',17)+' Продолжить черновик</a>':''}</div>
-    <div class="archive-tools">
-      <div class="filters" role="group" aria-label="Какие дни показать">${[['all','Все дни'],['mine','Мои дни'],['demo','Примеры']].map(([key,label])=>'<button class="chip" data-filter="'+key+'">'+label+'</button>').join('')}</div>
-      <div class="search-field"><label for="archive-query">Поиск</label><div class="archive-search">${icon('search',18)}<input id="archive-query" type="search" aria-label="Поиск по названию, песне или дате" placeholder="Название, песня или дата" autocomplete="off"><button type="button" id="clear-query" aria-label="Очистить поиск" hidden>${icon('close',16)}</button></div></div>
-    </div>
-    <div class="spread" data-enter role="region" aria-label="Воспоминание из архива">
-      <div id="featured-day"></div>
-      <div class="spread-nav" role="group" aria-label="Листать воспоминания">
-        <button id="previous-feature" aria-label="Предыдущий день">${icon('back',16)}</button>
-        <span id="spread-position" aria-live="polite"></span>
-        <button id="next-feature" aria-label="Следующий день">${icon('arrow',16)}</button>
+  main.innerHTML = `<section class="archive-hero" aria-labelledby="archive-heading"><div class="wrap intro">
+      <h1 id="archive-heading">Архив дней</h1>
+      <p>${accountUser?'Личные записи хранятся в аккаунте.':guestMode?'Гостевой режим. Записи хранятся в этом браузере.':'Гостевые записи хранятся в этом браузере.'}</p>
+      ${unfinished.value?'<a class="textbtn" id="resume-draft" href="#new">'+icon('book',17)+' Продолжить черновик</a>':''}
+    </div></section>
+    <section class="collection wrap" aria-label="Записи архива">
+      <div class="archive-tools">
+        <div class="search-field"><label for="archive-query" class="sr-only">Поиск по архиву</label><div class="archive-search">${icon('search',18)}<input id="archive-query" type="search" aria-label="Поиск по названию, песне или дате" placeholder="Название, песня или дата" autocomplete="off"><button type="button" id="clear-query" aria-label="Очистить поиск" hidden>${icon('close',16)}</button></div></div>
+        <div class="filters" role="group" aria-label="Какие дни показать">${[['all','Все дни'],['mine','Мои дни'],['demo','Примеры']].map(([key,label])=>'<button class="chip" type="button" data-filter="'+key+'">'+label+'</button>').join('')}</div>
       </div>
-    </div>
-    </section>
-    <section class="collection"><div class="collection-head"><h2>Папки дней</h2><span id="day-count" class="count" role="status"></span>
-      <div class="collection-actions"><button class="btn secondary" type="button" id="random-day">${icon('shuffle',16)} Случайный день</button>
-      <button class="btn secondary" type="button" id="import-day">${icon('folder',16)} Открыть файл дня</button></div></div>
+      <div class="collection-head"><span id="day-count" class="count" role="status"></span>
+        <div class="collection-actions"><button class="btn secondary" type="button" id="random-day">${icon('shuffle',16)} Случайный день</button>
+        <button class="btn secondary" type="button" id="import-day">${icon('folder',16)} Открыть файл дня</button></div></div>
       <input type="file" id="day-file" accept=".json,application/json" aria-label="Файл копии дня" hidden>
-      <p id="err-import" class="error" role="alert"></p><div id="folders"></div></section>`;
+      <p id="err-import" class="error" role="alert"></p>
+      <div class="archive-results">
+        <div id="folders"></div>
+        <div class="spread" role="region" aria-label="Воспоминание из архива">
+          <div id="featured-day"></div>
+          <div class="spread-nav" role="group" aria-label="Листать воспоминания">
+            <button id="previous-feature" aria-label="Предыдущий день">${icon('back',17)}</button>
+            <span id="spread-position" aria-hidden="true"></span>
+            <button id="next-feature" aria-label="Следующий день">${icon('arrow',17)}</button>
+          </div>
+        </div>
+      </div><p class="sr-only" id="spread-status" role="status" aria-atomic="true"></p></section>`;
   const importButton=$('#import-day'),dayFile=$('#day-file');
   importButton.disabled=unavailable;
   importButton.onclick=()=>dayFile.click();
@@ -162,7 +195,7 @@ async function archive(stamp) {
       const {entry,thumbnail}=await importDay(file,newId());
       await saveDay(entry,thumbnail);
       if(stamp===turn){
-        filter='mine';archiveQuery='';toast('Копия дня добавлена в архив');
+        filter='mine';archiveQuery='';archiveReturn=null;toast('Копия дня добавлена в архив');
         location.hash='day/'+encodeURIComponent(entry.id);
       }
     }catch(error){
@@ -176,26 +209,39 @@ async function archive(stamp) {
       }
     }
   };
-  function showFeature(index) {
+  function showFeature(index,announce=false) {
     featureIndex = (index + visible.length) % visible.length;
-    $('#featured-day').innerHTML = featurePage(visible[featureIndex]);
-    $('#spread-position').textContent = (featureIndex + 1) + ' / ' + visible.length;
+    const day=visible[featureIndex], position=featureIndex+1;
+    $('#featured-day').innerHTML = featurePage(day);
+    $('#spread-position').textContent = position+' / '+visible.length;
+    if(announce)$('#spread-status').textContent=`${day.title}. ${position} из ${visible.length}.`;
   }
-  $('#previous-feature').onclick = () => showFeature(featureIndex - 1);
-  $('#next-feature').onclick = () => showFeature(featureIndex + 1);
+  $('#previous-feature').onclick = () => showFeature(featureIndex - 1,true);
+  $('#next-feature').onclick = () => showFeature(featureIndex + 1,true);
+  $('.spread').onkeydown=event=>{
+    if(visible.length<2 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)return;
+    const direction={ArrowLeft:-1,ArrowRight:1}[event.key];
+    if(!direction)return;
+    event.preventDefault();
+    const focusFeature=Boolean(event.target.closest('.feature'));
+    showFeature(featureIndex+direction,!focusFeature);
+    if(focusFeature)$('.feature').focus({preventScroll:true});
+  };
   $('#random-day').onclick=()=>{
     const alternatives=visible.filter((day,index)=>index!==featureIndex);
     const day=alternatives[Math.floor(Math.random()*alternatives.length)] ?? visible[featureIndex];
     if(!day)return;
+    rememberArchive($('#random-day'));
     playOnOpen=day.id;
     location.hash='day/'+encodeURIComponent(day.id);
   };
-  function draw(preferOwn=false){
+  function draw(featuredHref){
     visible=matchingDays(days,filter,archiveQuery);
+    $('#spread-status').textContent='';
     $('.spread').hidden=!visible.length;
     $('.spread-nav').hidden=visible.length<2;
     $('#random-day').hidden=visible.length<2;
-    if(visible.length)showFeature(preferOwn ? Math.max(0,visible.findIndex(day=>!day.example)) : 0);
+    if(visible.length)showFeature(Math.max(0,visible.findIndex(day=>'#day/'+encodeURIComponent(day.id)===featuredHref)));
     else $('#featured-day').replaceChildren();
     const forms={one:'запись',few:'записи',many:'записей',other:'записи'};
     $('#day-count').textContent=visible.length+' '+forms[new Intl.PluralRules('ru').select(visible.length)];
@@ -205,8 +251,8 @@ async function archive(stamp) {
     if(visible.length)content='<div class="grid">'+visible.map(card).join('')+'</div>';
     else if(archiveQuery.trim())content='<div class="empty">'+icon('search',28)+'<h3>Совпадений пока нет</h3><p>Попробуйте другое название, песню или дату.</p><button id="reset-search" class="btn secondary">Сбросить поиск</button></div>';
     else if(unavailable)content='';
-    else content='<div class="empty">'+icon('folder',29)+'<h3>Ваш первый день</h3><p>Добавьте снимок, музыку и пару строк о том, что запомнилось.</p><a class="btn primary" href="#new">Новый день</a></div>';
-    $('#folders').innerHTML=(unavailable?'<p class="error" role="alert">Личный архив недоступен в этом браузере. Вы можете посмотреть три примера.</p>':'')+content;
+    else content='<div class="empty">'+icon('folder',29)+'<h3>Ваш первый день</h3><p>Добавьте снимок, музыку и пару строк о том, что запомнилось.</p><a class="btn primary" id="start-first-day" href="#new">Записать день</a></div>';
+    $('#folders').innerHTML=(unavailable?'<p class="error" role="alert">Личный архив сейчас недоступен. Вы можете посмотреть три примера.</p>':'')+content;
     if($('#reset-search'))$('#reset-search').onclick=clearQuery;
   }
   const input=$('#archive-query');
@@ -215,7 +261,7 @@ async function archive(stamp) {
   input.oninput=()=>{archiveQuery=input.value;draw();};
   $('#clear-query').onclick=clearQuery;
   main.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;draw();});
-  draw(true);
+  draw(archiveReturn?.featured);
 }
 async function formPage(stamp,editing){
   const key=editing?.id ?? 'new';
@@ -229,46 +275,64 @@ async function formPage(stamp,editing){
   const pageName=editing?'Редактировать день':'Новый день';
   title(pageName);
   const d=draft;
-  main.innerHTML=heading(pageName,'Добавьте фотографии, несколько строк о дне и музыку.')+
-  '<div class="form-wrap"><form novalidate><div class="form-line"><h2>Материалы дня</h2><button type="button" class="textbtn" id="fill-demo">'+icon('folder',15)+' Взять материалы примера</button></div>'+
-  '<div class="field"><label for="date">Дата дня</label><input type="date" id="date" required aria-describedby="err-date"><p id="err-date" class="error" role="alert"></p></div>'+
-  '<div class="field"><label for="story">Как прошёл день?</label><textarea id="story" required rows="4" placeholder="Запомнилось, как…" aria-describedby="err-story"></textarea><p id="err-story" class="error" role="alert"></p></div>'+
-  '<div class="field"><label for="photos">Фотографии</label><span class="hint" id="photo-hint">От 1 до 5 фото в JPEG, PNG или WebP, до 8 МиБ каждое. Нажмите на снимок, чтобы сделать его обложкой.</span><div class="drop">'+icon('image')+' Добавить фотографии<input type="file" multiple id="photos" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint err-photos"></div><div class="attachments" id="photo-list" role="group" aria-label="Выбор обложки"></div><p id="err-photos" class="error" role="alert"></p></div>'+
-  '<div class="field"><label for="song">Песня дня</label><span class="hint" id="song-hint">Фрагмент MP3 или WAV от 3 до 60 секунд, до 12 МиБ.</span><div class="drop">'+icon('music')+' Выбрать песню<input type="file" id="song" accept=".mp3,.wav,.wave,audio/mpeg,audio/wav" aria-describedby="song-hint err-song"></div><div class="attachments" id="audio-list"></div><audio id="song-audition" controls preload="metadata" aria-label="Послушать выбранную песню" hidden></audio><p id="err-song" class="error" role="alert"></p></div>'+
-  '<div class="field"><label for="soundtrack">Или музыка из примеров</label><select id="soundtrack"><option value="">Выбрать композицию</option>'+demos.map(x=>'<option value="'+x.id+'">'+h(x.audioName)+'</option>').join('')+'</select></div>'+
-  '<div class="actions"><button class="btn primary" type="submit" id="prepare">Посмотреть сцену '+icon('arrow',16)+'</button><span class="subtle" id="busy" role="status"></span></div><p class="subtle" id="draft-status" role="status"></p></form></div>';
+  const preset=editing?undefined:examplePreset;
+  const sample=preset ?? demos[0];
+  const sampleLabel=preset?`Взять материалы «${preset.title}»`:'Взять материалы примера';
+  main.innerHTML=heading(pageName,'Выберите, что поможет вспомнить этот день.')+`
+    <div class="form-wrap"><form novalidate>
+      <div class="form-line"><div class="material-status"><progress id="material-progress" max="3" value="0" aria-label="Готовность материалов"></progress><span id="material-count">0 из 3 готово</span></div>
+        <button type="button" class="textbtn" id="fill-demo">${icon('folder',15)} ${h(sampleLabel)}</button></div>
+      <section class="form-step" aria-labelledby="step-story">${step('story','1','Рассказ')}
+        <div class="field"><label for="date">Дата дня</label><input type="date" id="date" required aria-describedby="err-date"><p id="err-date" class="error" role="alert"></p></div>
+        <div class="field"><label for="story">Как прошёл день?</label><textarea id="story" required rows="4" placeholder="Запомнилось, как…" aria-describedby="err-story"></textarea><p id="err-story" class="error" role="alert"></p></div>
+      </section>
+      <section class="form-step" aria-labelledby="step-photos">${step('photos','2','Фотографии')}
+        <div class="field"><label class="sr-only" for="photos">Добавить фотографии</label><span class="hint" id="photo-hint">До 5 снимков в JPEG, PNG или WebP. Нажмите на снимок, чтобы выбрать обложку.</span>
+          <div class="drop">${icon('image')} Добавить фотографии<input type="file" multiple id="photos" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint err-photos"></div>
+          <div class="attachments" id="photo-list" role="group" aria-label="Выбор обложки"></div><p id="err-photos" class="error" role="alert"></p></div>
+      </section>
+      <aside class="cover-proof" aria-label="Обложка новой записи">
+        <h2>Обложка дня</h2>
+        <figure class="proof-sheet"><div class="proof-window"><img id="proof-image" alt="Выбранная обложка" hidden><span id="proof-placeholder">${icon('image',32)}Здесь появится ваш снимок</span></div><figcaption id="proof-date"></figcaption></figure>
+        <p class="proof-song">${icon('music',16)}<span id="proof-song"></span></p>
+      </aside>
+      <section class="form-step" aria-labelledby="step-song">${step('song','3','Песня дня')}
+        <div class="field"><label class="sr-only" for="song">Выбрать песню</label><span class="hint" id="song-hint">Фрагмент MP3 или WAV от 3 до 60 секунд, до 12 МиБ.</span>
+          <div class="drop">${icon('music')} Выбрать песню<input type="file" id="song" accept=".mp3,.wav,.wave,audio/mpeg,audio/wav" aria-describedby="song-hint err-song"></div>
+          <div class="attachments" id="audio-list"></div><audio id="song-audition" controls preload="none" aria-label="Послушать выбранную песню" hidden></audio><p id="err-song" class="error" role="alert"></p></div>
+        <div class="field"><label for="soundtrack">Или музыка из примеров</label><select id="soundtrack"><option value="">Выбрать композицию</option>${demos.map(x=>'<option value="'+x.id+'">'+h(x.audioName)+'</option>').join('')}</select></div>
+      </section>
+      <div class="actions stage-actions"><button class="btn primary" type="submit" id="prepare">Посмотреть сцену ${icon('arrow',16)}</button>
+        <span class="subtle" id="busy" role="status"></span><span class="subtle" id="draft-status" role="status"></span></div>
+    </form></div>`;
   if(editing){
     $('.page-heading .back').href='#day/'+encodeURIComponent(editing.id);
     $('.page-heading .back').lastChild.textContent=' К записи';
   }
   if(d.revision)draftStatus('Черновик открыт');
-  $('#photo-list').closest('.field').insertAdjacentHTML('afterend', `
-    <aside class="cover-proof" aria-label="Обложка новой записи">
-      <h2>Обложка дня</h2>
-      <figure class="proof-sheet">
-        <div class="proof-window"><img id="proof-image" alt="Выбранная обложка" hidden>
-          <span id="proof-placeholder">${icon('image',32)}Здесь появится ваш снимок</span></div>
-        <figcaption id="proof-date"></figcaption>
-      </figure>
-      <p class="proof-song">${icon('music',16)}<span id="proof-song"></span></p>
-      <ul class="draft-progress" aria-label="Материалы дня">
-        <li data-material="story"><span></span>Запись</li>
-        <li data-material="photos"><span></span>Фотографии</li>
-        <li data-material="song"><span></span>Музыка</li>
-      </ul>
-    </aside>`);
   let formBusy=false,pending=0, sampleRequest=0, audioRequest=0;
   const thumbURLs=new Map();
   let auditionFile=null;
   const current=()=>turn===stamp && d===draft;
-  function syncButton(){if(!current())return;$('#prepare').disabled=formBusy||pending>0;$('#busy').textContent=formBusy?'Готовим воспоминание…':pending?'Загружаем материалы…':'';}
+  function syncButton(){
+    if(!current())return;
+    const busy=formBusy||pending>0;
+    const button=$('#prepare');
+    button.disabled=busy;
+    button.setAttribute('aria-busy',String(busy));
+    $('#busy').textContent=formBusy?'Собираем сцену…':pending?'Загружаем материалы…':'';
+  }
   function updateProgress(){
-    const ready={story:words(d.text).length,photos:d.photos.length,song:d.audio};
+    const ready={story:Boolean(d.dayDate && words(d.text).length),photos:Boolean(d.photos.length),song:Boolean(d.audio)};
+    const count=Object.values(ready).filter(Boolean).length;
+    $('#material-progress').value=count;
+    $('#material-count').textContent=count+' из 3 готово';
     for(const item of main.querySelectorAll('[data-material]')){
-      const complete=Boolean(ready[item.dataset.material]);
+      const complete=ready[item.dataset.material];
       item.toggleAttribute('data-ready',complete);
-      item.querySelector('span').textContent=complete?'✓':'○';
-      item.querySelector('span').setAttribute('aria-label',complete?'Добавлено':'Ожидает');
+      const marker=item.querySelector('span');
+      marker.innerHTML=complete?icon('check',16):marker.dataset.number;
+      item.querySelector('small').textContent=complete?'Готово':'';
     }
   }
   function changed(){d.revision++;formBusy=false;syncButton();updateProgress();persistDraft(d);}
@@ -295,7 +359,7 @@ async function formPage(stamp,editing){
       changed();picks();errorText('photos','');
       ($('[data-remove="'+Math.min(index,d.photos.length-1)+'"]') || $('#photos')).focus({preventScroll:true});
     });
-    if($('#remove-song'))$('#remove-song').onclick=()=>{audioRequest++;d.audio=null;d.audioName='';d.trackId='';d.cues=null;$('#soundtrack').value='';changed();picks();errorText('song','');};
+    if($('#remove-song'))$('#remove-song').onclick=()=>{audioRequest++;d.audio=null;d.audioName='';d.trackId='';d.cues=null;changed();picks();errorText('song','');$('#song').focus();};
     const cover = $('#proof-image');
     cover.hidden = !d.photos.length;
     $('#proof-placeholder').hidden = !!d.photos.length;
@@ -319,9 +383,23 @@ async function formPage(stamp,editing){
   $('#story').oninput=e=>{d.text=e.target.value;changed();errorText('story','');};
   function filesFor(type,files){
     if(!files.length)return;
+    if(type==='photos'){
+      const accepted=[], notes=[];
+      for(const file of files){
+        let note;
+        if(d.photos.length+accepted.length===5)note='Уже выбрано пять снимков.';
+        else {
+          try{checkPhotos([file]);accepted.push(file);}
+          catch(err){note=/\.hei[cf]$/i.test(file.name)?'Экспортируйте снимок в JPEG из приложения «Фото».':err.message;}
+        }
+        if(note)notes.push(file.name+' — '+note);
+      }
+      if(accepted.length){d.photos.push(...accepted);changed();picks();}
+      errorText('photos',notes.join('\n'));
+      return;
+    }
     try{
-      if(type==='photos'){const next=[...d.photos,...files];checkPhotos(next);d.photos=next;}
-      else {checkAudio(files[0]);audioRequest++;d.audio=files[0];d.audioName=d.audio.name.replace(/\.[^.]+$/,'');d.trackId='';d.cues=null;}
+      checkAudio(files[0]);audioRequest++;d.audio=files[0];d.audioName=d.audio.name.replace(/\.[^.]+$/,'');d.trackId='';d.cues=null;
       changed();picks();errorText(type,'');
     }catch(err){errorText(type,err.message);}
   }
@@ -335,7 +413,7 @@ async function formPage(stamp,editing){
   async function loadExample(){
     const req=++sampleRequest,revision=d.revision;audioRequest++;pending++;syncButton();
     try{
-      const sample=demos[0], files=await Promise.all([...sample.photos,sample.audio].map(exampleFile));
+      const files=await Promise.all([...sample.photos,sample.audio].map(exampleFile));
       if(!current() || req!==sampleRequest || revision!==d.revision)return;
       d.photos=files.slice(0,-1);d.coverIndex=0;d.audio=files.at(-1);d.audioName=sample.audioName;d.trackId=sample.id;d.text=sample.text;d.dayDate=sample.dayDate;d.cues=null;
       $('#story').value=d.text;$('#date').value=d.dayDate;
@@ -346,7 +424,8 @@ async function formPage(stamp,editing){
   }
   $('#fill-demo').onclick=()=>{
     if(!editing && !(d.text.trim() || d.photos.length || d.audio)){loadExample();return;}
-    popup('<h2>Заменить материалы?</h2><p>Текст, фотографии и музыка в форме будут заменены примером.</p><div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Отмена</button><button type="button" class="btn primary" data-confirm>Взять пример</button></div>','Заменить материалы');
+    const exampleName=preset?` «${h(preset.title)}»`:'';
+    popup(`<h2>Заменить материалы?</h2><p>Текст, фотографии и музыка в форме будут заменены примером${exampleName}.</p><div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Отмена</button><button type="button" class="btn primary" data-confirm>Взять пример</button></div>`,'Заменить материалы');
     dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
     dialog.querySelector('[data-confirm]').onclick=()=>{dialog.close();loadExample();};
     dialog.querySelector('[data-cancel]').focus();
@@ -377,31 +456,62 @@ async function formPage(stamp,editing){
     if(photo.status==='rejected')errorText('photos',photo.reason.message);
     if(audio.status==='rejected')errorText('song',audio.reason.message);
     if(photo.status==='rejected'||audio.status==='rejected'){ $('#'+(photo.status==='rejected'?'photos':'song')).focus();return;}
-    const preservedQuote=d.quote && d.text.includes(d.quote) ? d.quote : composition.quote;
-    const timing=audio.value;
-    const scene={version:1,coverPhotoIndex:d.coverIndex,quote:preservedQuote,palette:photo.value.palette,...timing,...(validCues(d.cues,timing.endAtSec)?d.cues:{})};
-    preview={entry:{id:d.id,dayDate:d.dayDate,title:d.title||composition.title,text:d.text,audioName:d.audioName,photoFiles:[...d.photos],audioFile:d.audio,scene},quotes:composition.quotes,thumbnail:photo.value.thumbnail,revision:rev,timing};
+    preview=makePreview(d,composition,photo.value,audio.value);
     location.hash=editing?'preview/'+encodeURIComponent(editing.id):'preview';
   };
 }
-function previewPage(stamp,editingId){
+async function previewPage(stamp,editingId){
   const materials=editingId?'#edit/'+encodeURIComponent(editingId):'#new';
-  if(!preview || draft?.key!==(editingId??'new') || preview.revision!==draft.revision){
-    location.replace(materials);return;
+  const key=editingId??'new';
+  if(!preview || draft?.key!==key || preview.revision!==draft.revision){
+    await draftWrites;
+    try{
+      let restored=draft?.key===key?draft:await getDraft(key);
+      if(!restored && editingId){const entry=await getDay(editingId);if(entry)restored=newDraft(entry);}
+      if(stamp!==turn)return;
+      if(!restored?.dayDate || !restored.audio || !restored.photos.length){location.replace(materials);return;}
+      const composition=composeText(restored.text);
+      const [photo,timing]=await Promise.all([analyzePhotos(restored.photos,restored.coverIndex),analyzeAudio(restored.audio)]);
+      if(stamp!==turn)return;
+      draft=restored;
+      preview=makePreview(restored,composition,photo,timing);
+    }catch{
+      if(stamp===turn){toast('Сцену не удалось открыть. Проверьте материалы.');location.replace(materials);}
+      return;
+    }
   }
   title('Предпросмотр');const {entry,quotes,thumbnail}=preview,view=displayDay(entry);
   const state=draft;
-  main.innerHTML='<div class="page-heading"><a class="back" href="'+h(materials)+'">'+icon('back',16)+' К материалам</a><h1>Предпросмотр</h1><p>'+h(dateLabel(entry.dayDate))+' · '+h(entry.audioName)+'</p></div><div class="preview-grid"><section class="player-box" aria-label="Сцена дня"></section><section class="editor"><h2>Ваша папка</h2>'+
-  '<div class="field"><label for="entry-title">Название дня</label><input id="entry-title" maxlength="120" aria-describedby="err-title"><p class="error" id="err-title" role="alert"></p></div>'+
-  '<div class="field quote-field"><label for="choice">Фраза за кадром</label><blockquote class="quote-print" id="chosen-quote"></blockquote><div class="quote-picker"><span aria-hidden="true">Сменить фразу '+icon('down',16)+'</span><select id="choice">'+quotes.map((x,i)=>'<option value="'+i+'">'+h(x)+'</option>').join('')+'<option value="custom">Ввести свой фрагмент…</option></select></div><div id="own-quote" hidden><label for="custom-quote">Дословный фрагмент записи</label><textarea id="custom-quote" rows="3" aria-describedby="err-quote"></textarea><details class="quote-source"><summary>Прочитать исходную запись</summary><p>'+h(entry.text)+'</p></details></div><p class="error" id="err-quote" role="alert"></p></div>'+
-  '<details class="timing-editor"><summary>'+icon('wave',18)+' Переходы под музыку</summary><div class="timing-fields">'+
-  '<div><label for="quote-cue">Появление фразы</label><output for="quote-cue"></output><input id="quote-cue" type="range" step="0.01" min="0.3"></div>'+
-  '<div><label for="return-cue">Возврат кадра</label><output for="return-cue"></output><input id="return-cue" type="range" step="0.01"></div>'+
-  '<button class="textbtn" type="button" id="reset-cues">Вернуть музыкальные акценты</button></div></details>'+
-  '<div class="actions"><button class="btn primary" id="save">'+icon('folder',17)+(editingId?' Сохранить изменения':' Сохранить день')+'</button><span class="subtle" id="draft-status" role="status"></span></div><p class="error" id="err-save" role="alert"></p></section></div>';
-  player=mountPlayer($('.player-box'),view);
+  main.innerHTML=`<div class="page-heading"><a class="back" href="${h(materials)}">${icon('back',16)} К материалам</a><h1 id="preview-title">${h(entry.title)}</h1><p>${h(dateLabel(entry.dayDate))} · <span id="preview-track">${h(entry.audioName)}</span></p></div>
+    <div class="preview-grid">
+      <div class="preview-stage">
+        <section class="player-box" aria-label="Сцена дня"></section>
+        <details class="timing-editor"><summary>${icon('wave',18)} <span>Переходы под музыку</span><span class="cue-readout"><span class="sr-only">Фраза на</span><span id="cue-source"></span><span id="cue-origin"></span></span>${icon('down',16)}</summary><div class="timing-fields">
+          <div><label for="quote-cue">Появление фразы</label><output for="quote-cue"></output><input id="quote-cue" type="range" step="0.01" min="0.3"></div>
+          <div><label for="return-cue">Возврат кадра</label><output for="return-cue"></output><input id="return-cue" type="range" step="0.01"></div>
+          <div class="timing-actions"><button class="btn secondary" type="button" id="audition-cues">${icon('play',16)} Послушать переходы</button><button class="textbtn" type="button" id="reset-cues">Вернуть музыкальные акценты</button></div>
+        </div></details>
+      </div>
+      <div class="preview-sidebar"><section class="editor"><h2>Оформление дня</h2>
+        <div class="field"><label for="entry-title">Название дня</label><input id="entry-title" maxlength="120" aria-describedby="err-title"><p class="error" id="err-title" role="alert"></p></div>
+        <div class="field quote-field"><label for="choice">Фраза за кадром</label><blockquote class="quote-print" id="chosen-quote"></blockquote>
+          <select id="choice" aria-describedby="err-quote">${quotes.map((quote,index)=>`<option value="${index}">${h(quote)}</option>`).join('')}<option value="custom">Ввести свой фрагмент…</option></select>
+          <div id="own-quote" hidden><label for="custom-quote">Дословный фрагмент записи</label><textarea id="custom-quote" rows="3" aria-describedby="err-quote"></textarea>
+            <details class="quote-source"><summary>Прочитать исходную запись</summary><p>${h(entry.text)}</p></details></div><p class="error" id="err-quote" role="alert"></p></div>
+        <dl class="scene-sources"><div><dt>Обложка дня</dt><dd><img src="${h(view.photos[entry.scene.coverPhotoIndex])}" alt="">Снимок ${entry.scene.coverPhotoIndex+1} из ${view.photos.length}</dd></div></dl>
+        <details class="track-comparison"><summary>${icon('music',17)} Сравнить другую песню</summary><div class="track-comparison-body">
+          <button class="btn secondary" type="button" id="compare-track"></button><p class="subtle" id="track-change" role="status"></p><p class="error" id="err-compare" role="alert"></p>
+        </div></details>
+      </section>
+      <div class="actions stage-actions preview-actions"><button class="btn primary" id="save">${icon('folder',17)} ${editingId?'Сохранить изменения':'Сохранить день'}</button>
+        <span class="subtle" id="draft-status" role="status"></span><p class="error" id="err-save" role="alert"></p></div>
+      </div>
+    </div>`;
+  const playerHost=$('.player-box'), saveButton=$('#save'), compareButton=$('#compare-track');
+  player=mountPlayer(playerHost,view);
   const quoteCue=$('#quote-cue'),returnCue=$('#return-cue'),resetCues=$('#reset-cues');
-  const timingFields=[quoteCue,returnCue,resetCues];
+  const auditionCues=$('#audition-cues');
+  const timingFields=[quoteCue,returnCue,resetCues,auditionCues];
   const roundCue=value=>Math.round(value*100)/100;
   function drawCues(){
     const {quoteAtSec,returnAtSec,endAtSec}=entry.scene;
@@ -411,10 +521,12 @@ function previewPage(stamp,editingId){
     quoteCue.value=quoteAtSec;
     returnCue.value=returnAtSec;
     for(const [input,value] of [[quoteCue,quoteAtSec],[returnCue,returnAtSec]]){
-      const seconds=value.toLocaleString('ru',{maximumFractionDigits:2})+' с';
+      const seconds=cueLabel(value);
       input.previousElementSibling.value=seconds;
       input.setAttribute('aria-valuetext',seconds);
     }
+    $('#cue-source').textContent=cueLabel(quoteAtSec);
+    $('#cue-origin').textContent=state.cues?'Вручную':'По музыке';
   }
   function applyCues(cues,custom){
     if(!validCues(cues,entry.scene.endAtSec))return;
@@ -425,6 +537,11 @@ function previewPage(stamp,editingId){
   }
   const modifyCues=()=>applyCues({quoteAtSec:Number(quoteCue.value),returnAtSec:Number(returnCue.value)},true);
   quoteCue.oninput=returnCue.oninput=modifyCues;
+  for(const cue of [quoteCue,returnCue])cue.onchange=()=>player.seek(Number(cue.value));
+  auditionCues.onclick=()=>{
+    const {quoteAtSec,returnAtSec,endAtSec}=entry.scene;
+    player.audition(Math.max(0,quoteAtSec-0.8),Math.min(endAtSec,returnAtSec+0.8));
+  };
   resetCues.onclick=()=>{
     const {quoteAtSec,returnAtSec}=preview.timing;
     applyCues({quoteAtSec,returnAtSec},false);
@@ -434,13 +551,14 @@ function previewPage(stamp,editingId){
   titleField.value=entry.title;const idx=quotes.indexOf(entry.scene.quote);choice.value=idx<0?'custom':String(idx);
   custom.value=entry.scene.quote;$('#own-quote').hidden=idx>=0;
   $('#chosen-quote').textContent='«'+entry.scene.quote+'»';
-  $('#chosen-quote').hidden=idx<0;
   function checkTitle(){
     const value=titleField.value.trim();
     const valid=value.length>0 && value.length<=120;
     errorText('title',valid?'':'Введите название до 120 знаков.');
     if(valid){
       entry.title=value;
+      player.setTitle(value);
+      $('#preview-title').textContent=value;
       if(state.title!==value){state.title=value;persistDraft(state);}
     }
     return valid;
@@ -458,30 +576,75 @@ function previewPage(stamp,editingId){
   titleField.oninput=checkTitle;custom.oninput=checkQuote;
   choice.onchange=()=>{
     const isCustom=choice.value==='custom';
-    $('#own-quote').hidden=!isCustom;$('#chosen-quote').hidden=isCustom;
+    $('#own-quote').hidden=!isCustom;
     if(isCustom)custom.focus();
     else custom.value=quotes[Number(choice.value)];
     checkQuote();
   };
-  let saving=false;
-  $('#save').onclick=async()=>{
-    if(saving)return;
+  const sample=demos.find(item=>item.audioName!==entry.audioName);
+  const tracks=[{id:state.trackId,name:entry.audioName,file:entry.audioFile,url:view.audio,timing:preview.timing,cues:state.cues},
+    {id:sample.id,name:sample.audioName,cues:null}];
+  let activeTrack=0,changingTrack=false,saving=false;
+  function labelTrack(){compareButton.textContent=(activeTrack?'Вернуть «':'Поставить «')+tracks[1-activeTrack].name+'»';}
+  labelTrack();
+  compareButton.onclick=async()=>{
+    if(saving||changingTrack)return;
+    changingTrack=true;
+    const nextIndex=1-activeTrack,next=tracks[nextIndex];
+    compareButton.setAttribute('aria-disabled','true');
+    saveButton.disabled=true;
+    compareButton.textContent='Готовим трек…';
+    errorText('compare','');
+    try{
+      if(!next.file){
+        const file=await exampleFile(sample.audio);
+        const timing=await analyzeAudio(file);
+        if(stamp!==turn)return;
+        Object.assign(next,{file,timing,url:objectURL(file)});
+      }
+      const previousCue=entry.scene.quoteAtSec;
+      tracks[activeTrack].cues=state.cues;
+      activeTrack=nextIndex;
+      state.audio=entry.audioFile=next.file;
+      state.audioName=entry.audioName=next.name;
+      state.trackId=next.id;
+      state.cues=next.cues;
+      preview.timing=next.timing;
+      Object.assign(entry.scene,next.timing,next.cues ?? {});
+      player.destroy();
+      Object.assign(view,{audio:next.url,audioName:next.name,title:entry.title});
+      player=mountPlayer(playerHost,view);
+      $('#preview-track').textContent=next.name;
+      drawCues();
+      $('#track-change').textContent=previousCue===entry.scene.quoteAtSec
+        ?'У обоих треков фраза появляется на '+cueLabel(previousCue)+'.'
+        :'Появление фразы: '+cueLabel(previousCue)+' → '+cueLabel(entry.scene.quoteAtSec)+'.';
+      persistDraft(state);
+    }catch{
+      if(stamp===turn)errorText('compare','Не удалось открыть трек. Попробуйте ещё раз.');
+    }finally{
+      changingTrack=false;
+      if(stamp===turn){labelTrack();compareButton.removeAttribute('aria-disabled');saveButton.disabled=false;}
+    }
+  };
+  saveButton.onclick=async()=>{
+    if(saving||changingTrack)return;
     if(!checkTitle()){titleField.focus();return;}if(!checkQuote()){custom.focus();return;}
-    saving=true;$('#save').disabled=true;errorText('save','');
-    for(const field of [titleField,choice,custom,...timingFields])field.disabled=true;
+    saving=true;saveButton.disabled=true;saveButton.setAttribute('aria-busy','true');errorText('save','');
+    for(const field of [titleField,choice,custom,compareButton,...timingFields])field.disabled=true;
     draftStatus('Сохраняем день…');
     try{
       await draftWrites;
       await saveDay(entry,thumbnail,state.key);
       if(draft===state){draft=null;preview=null;}
-      if(stamp===turn){filter='mine';archiveQuery='';toast(editingId?'Изменения сохранены':'День сохранён в вашем архиве');location.replace('#day/'+encodeURIComponent(entry.id));}
+      if(stamp===turn){filter='mine';archiveQuery='';archiveReturn=null;toast(editingId?'Изменения сохранены':'День сохранён в вашем архиве');location.replace('#day/'+encodeURIComponent(entry.id));}
     }catch{
       if(stamp===turn){
-        errorText('save','Не удалось сохранить день. Проверьте свободное место и доступ к хранилищу браузера.');
+        errorText('save',accountUser?'Не удалось сохранить день в аккаунте. Попробуйте снова.':'Не удалось сохранить день. Проверьте свободное место в браузере.');
         draftStatus('');
-        $('#save').disabled=false;
-        for(const field of [titleField,choice,custom,...timingFields])field.disabled=false;
-        $('#save').focus();
+        saveButton.disabled=false;saveButton.removeAttribute('aria-busy');
+        for(const field of [titleField,choice,custom,compareButton,...timingFields])field.disabled=false;
+        saveButton.focus();
       }
     }finally{saving=false;}
   };
@@ -489,15 +652,25 @@ function previewPage(stamp,editingId){
 function dayPage(entry,autoplay){
   const view=displayDay(entry);title(entry.title);
   main.innerHTML=heading(entry.title,dateLabel(entry.dayDate)+(entry.example?' · День из примеров':' · Личный день'))+
-    '<div class="preview-grid"><section class="player-box" aria-label="Сцена дня"></section><aside><section class="day-notes"><span class="micro">'+icon('music',16)+' Песня дня</span><h2>'+h(entry.audioName)+'</h2><audio controls preload="metadata" aria-label="Исходный трек"></audio></section><details class="materials"><summary>Материалы дня</summary><h3>Запись</h3><p class="original">'+h(entry.text)+'</p><h3>Фотографии</h3><div class="source-photos">'+view.photos.map((src,i)=>'<button type="button" data-photo="'+i+'" aria-label="Открыть снимок '+(i+1)+'"><img src="'+h(src)+'" alt="'+h(view.alts?.[i]||'Снимок '+(i+1))+'"></button>').join('')+'</div></details></aside></div>';
+    `<div class="preview-grid day-grid"><section class="player-box" aria-label="Сцена дня"></section><aside class="day-sidebar">
+      <section class="day-notes"><span class="micro">${icon('music',16)} Песня дня</span><h2>${h(entry.audioName)}</h2></section>
+      <details class="materials"><summary>Материалы дня</summary>
+        <h3>Рассказ</h3><p class="original">${h(entry.text)}</p>
+        <h3>Фотографии</h3><div class="source-photos">${view.photos.map((src,i)=>`<button type="button" data-photo="${i}" aria-label="Открыть снимок ${i+1}"><img loading="lazy" src="${h(src)}" alt="${h(view.alts?.[i]||'Снимок '+(i+1))}"></button>`).join('')}</div>
+        <h3>Исходный трек</h3><audio controls preload="none" aria-label="Исходный трек"></audio>
+      </details></aside></div>`;
   player=mountPlayer($('.player-box'),view,autoplay);
-  const original=$('.day-notes audio');original.src=view.audio;original.onplay=()=>player?.pause();
+  const original=$('.materials audio');original.onplay=()=>player?.pause();
+  $('.materials').ontoggle=event=>{
+    if(event.currentTarget.open){if(!original.hasAttribute('src'))original.src=view.audio;}
+    else original.pause();
+  };
   if(!entry.example){
-    $('.page-heading').insertAdjacentHTML('beforeend',`<div class="day-actions">
-      <a class="btn secondary" href="#edit/${encodeURIComponent(entry.id)}">Редактировать день</a>
-      <button class="btn secondary" type="button" id="export-day">Скачать копию</button>
-      <button class="btn quiet-danger" type="button" id="remove-day">Удалить день</button>
-    </div><p class="error" id="err-export" role="alert"></p>`);
+    $('.page-heading').insertAdjacentHTML('beforeend',`<details class="day-management"><summary class="btn secondary">Действия ${icon('down',16)}</summary>
+      <div class="day-actions"><a class="btn secondary" href="#edit/${encodeURIComponent(entry.id)}">Редактировать день</a>
+        <button class="btn secondary" type="button" id="export-day">Скачать копию</button>
+        <button class="btn quiet-danger" type="button" id="remove-day">Удалить день</button>
+        <p class="error" id="err-export" role="alert"></p></div></details>`);
     const exportButton=$('#export-day');
     exportButton.onclick=async()=>{
       exportButton.disabled=true;
@@ -558,27 +731,55 @@ async function route(){
   for(const a of main.querySelectorAll('audio')){a.pause();a.removeAttribute('src');a.load();}
   urls.forEach(URL.revokeObjectURL);urls=[];
   const hash=location.hash.slice(1)||'archive',auto=playOnOpen;playOnOpen='';
+  main.dataset.page=hash.split('/')[0];
   main.innerHTML='<div class="loading-state" role="status">Открываем дневник…</div>';
   document.querySelector('#nav-archive').toggleAttribute('aria-current',hash==='archive');
   if(hash==='archive')document.querySelector('#nav-archive').setAttribute('aria-current','page');
   try{
     if(hash==='archive')await archive(stamp);
     else if(hash==='new')await formPage(stamp);
-    else if(hash==='preview')previewPage(stamp);
-    else if(hash.startsWith('preview/'))previewPage(stamp,decodeURIComponent(hash.slice(8)));
+    else if(hash==='preview')await previewPage(stamp);
+    else if(hash.startsWith('preview/'))await previewPage(stamp,decodeURIComponent(hash.slice(8)));
     else if(hash.startsWith('edit/')){
       const entry=await getDay(decodeURIComponent(hash.slice(5)));
       if(turn!==stamp)return;
       if(entry)await formPage(stamp,entry);
-      else missing('Эта запись не найдена в текущем браузере.');
+      else missing('Эта запись не найдена в вашем архиве.');
     }
     else if(hash.startsWith('day/')){
       const id=decodeURIComponent(hash.slice(4));const entry=demos.find(x=>x.id===id)||await getDay(id);
       if(turn!==stamp)return;
-      if(entry)dayPage(entry,auto===id);else missing('Эта запись не найдена в текущем браузере.');
+      if(entry)dayPage(entry,auto===id);else missing('Эта запись не найдена в вашем архиве.');
     }else missing('Проверьте адрес или выберите день в архиве.');
   }catch{if(stamp===turn)missing('Не удалось открыть запись. Попробуйте вернуться в архив.');}
   if(turn!==stamp)return;
-  window.scrollTo(0,0);if(visited)main.focus({preventScroll:true});visited=true;
+  const returning=hash==='archive'?archiveReturn:null;
+  if(returning)archiveReturn=null;
+  const previousTrigger=returning && [...main.querySelectorAll(returning.selector)].find(node=>!returning.href || node.getAttribute('href')===returning.href);
+  window.scrollTo(0,returning?.scroll ?? 0);
+  if(visited){
+    const pageTitle=$('h1');
+    if(pageTitle)pageTitle.tabIndex=-1;
+    (previousTrigger||pageTitle||main).focus({preventScroll:true});
+  }
+  visited=true;
 }
+if(!guestMode){
+  try {
+    accountUser=await connectDiary();
+    if(accountUser){
+      document.querySelector('#journal-account').setAttribute('aria-label','Ваш аккаунт');
+      document.querySelector('#storage-note').textContent='Личные дни хранятся в вашем аккаунте';
+    }
+  } catch {
+    toast('Не удалось подключиться к аккаунту. Открыт гостевой дневник.');
+  }
+}
+if(guestMode || accountUser){
+  const archiveSwitch=document.createElement('a');
+  archiveSwitch.href=guestMode?'/journal.html#archive':'/journal.html?mode=guest#archive';
+  archiveSwitch.textContent=guestMode?'Выйти из гостевого режима':'Открыть гостевой архив';
+  document.querySelector('.foot nav').prepend(archiveSwitch);
+}
+window.addEventListener('hashchange',route);
 route();

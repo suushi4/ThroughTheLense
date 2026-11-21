@@ -1,0 +1,10 @@
+.public-mast { min-height: 72px; display: flex; align-items: center; }
+.public-page { max-width: 780px; min-height: 56vh; padding-block: clamp(36px,7vw,92px); }
+.public-page h1 { font-size: clamp(36px,5.5vw,72px); font-weight: 650; letter-spacing: -.06em; line-height: 1; overflow-wrap: anywhere; }
+.public-page h2 { margin-top: 30px; font-size: 22px; line-height: 1.2; }
+.public-page p { margin-top: 8px; color: var(--muted); }
+.public-page .page-lead { margin-top: 20px; font-size: 18px; }
+.public-page .action { margin-top: 16px; }
+.settings-button { border-color: #7a8877; background: var(--sheet); }
+.settings-button:hover { background: var(--wash); }
+.public-page p a { text-decoration: underline; text-underline-offset: 3px; }
