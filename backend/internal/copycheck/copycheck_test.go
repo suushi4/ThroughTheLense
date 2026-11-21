@@ -1,14 +1,17 @@
 package copycheck
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"throughthelense/backend/internal/fixture"
+	"throughthelense/backend/internal/mediacheck"
 )
 
 func b64(b []byte) string { return base64.StdEncoding.EncodeToString(b) }
@@ -123,6 +126,29 @@ func TestDemoMedia(t *testing.T) {
 		c["audio"] = map[string]any{"name": name + ".wav", "type": "audio/wav", "data": b64(audio)}
 		if err := check(t, c); err != nil {
 			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+// Every diary track must be shareable: MP3 recognised, duration in range.
+func TestDiaryTracks(t *testing.T) {
+	files, _ := filepath.Glob("../../../web/media/music/*.mp3")
+	if len(files) == 0 {
+		t.Skip("no diary tracks")
+	}
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		kind, seconds, err := mediacheck.Audio(bytes.NewReader(data), int64(len(data)))
+		if err != nil || kind != "audio/mpeg" || seconds < 30 || seconds > 45 {
+			t.Errorf("%s: %s %.1fs %v", filepath.Base(path), kind, seconds, err)
+		}
+		c := valid()
+		c["audio"] = map[string]any{"name": filepath.Base(path), "type": "audio/mpeg", "data": b64(data)}
+		if err := check(t, c); err != nil {
+			t.Errorf("%s: %v", filepath.Base(path), err)
 		}
 	}
 }

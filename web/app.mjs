@@ -3,6 +3,7 @@ import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
 import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,coverWarmth} from './scene.mjs';
 import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
 import {demos,exampleFile} from './demo.mjs';
+import {diaryTracks} from './tracks.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 import {openShare,shareSupported} from './share.mjs';
@@ -310,7 +311,7 @@ async function formPage(stamp,editing){
           <div class="attachments" id="audio-list"></div><audio id="song-audition" controls preload="none" aria-label="Послушать выбранную песню" hidden></audio><p id="err-song" class="error" role="alert"></p></div>
         <fieldset class="field track-picks"><legend>Нет своей песни? Возьмите трек из дневника</legend>
           <p class="hint" id="track-hint" role="status"></p>
-          <div class="track-options">${demos.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
+          <div class="track-options">${diaryTracks.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false" title="${h(x.mood)}">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
           <div class="ambience-chips" id="ambience-chips"></div>
@@ -438,7 +439,7 @@ async function formPage(stamp,editing){
     const warmth=await warmthOf.get(cover);
     if(!current() || cover!==d.photos[d.coverIndex])return;
     if(warmth===null){fit(null);hint.textContent='';return;}
-    const best=demos.reduce((a,b)=>Math.abs(b.warmth-warmth)<Math.abs(a.warmth-warmth)?b:a);
+    const best=diaryTracks.reduce((a,b)=>Math.abs(b.warmth-warmth)<Math.abs(a.warmth-warmth)?b:a);
     fit(best.id);
     const tone=warmth<0.07?'холодному':warmth>0.11?'тёплому':'мягкому';
     hint.textContent='Подсвечен трек, который ближе к '+tone+' тону обложки. Выбор за вами.';
@@ -501,7 +502,7 @@ async function formPage(stamp,editing){
   };
   for(const b of main.querySelectorAll('[data-track]'))b.onclick=()=>chooseTrack(b.dataset.track);
   const chooseTrack=async id=>{
-    const item=demos.find(x=>x.id===id);
+    const item=diaryTracks.find(x=>x.id===id);
     if(!item || id===d.trackId)return;
     const req=++audioRequest;
     changed();pending++;syncButton();
