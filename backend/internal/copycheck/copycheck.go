@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -54,6 +55,30 @@ type dayCopy struct {
 	CoverIndex json.RawMessage `json:"coverIndex"`
 	Photos     []media         `json:"photos"`
 	Audio      *media          `json:"audio"`
+	Ambience   json.RawMessage `json:"ambience"`
+}
+
+var ambienceID = regexp.MustCompile(`^[a-z][a-z-]{0,39}$`)
+
+// validAmbience accepts an absent field or up to four {id, gain} entries.
+// Ids are not matched against the library: the page drops unknown ones.
+func validAmbience(raw json.RawMessage) bool {
+	if len(raw) == 0 || string(raw) == "null" {
+		return true
+	}
+	var items []struct {
+		ID   *string  `json:"id"`
+		Gain *float64 `json:"gain"`
+	}
+	if json.Unmarshal(raw, &items) != nil || len(items) > 4 {
+		return false
+	}
+	for _, item := range items {
+		if item.ID == nil || !ambienceID.MatchString(*item.ID) || item.Gain == nil || *item.Gain < 0 || *item.Gain > 1 {
+			return false
+		}
+	}
+	return true
 }
 
 // jsLen is String.prototype.length: UTF-16 code units.
@@ -117,6 +142,9 @@ func Check(raw []byte) (Meta, error) {
 	}
 	if !audioType(*c.Audio.Type, kind) {
 		return Meta{}, reject("Тип трека не совпадает с его содержимым.")
+	}
+	if !validAmbience(c.Ambience) {
+		return Meta{}, reject("Звуки места в копии повреждены.")
 	}
 	return Meta{Title: *c.Title, Quote: *c.Quote}, nil
 }
