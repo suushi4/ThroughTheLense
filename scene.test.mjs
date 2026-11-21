@@ -1,8 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {composeText,words,rhythm,phaseAt,checkPhotos,checkAudio} from './web/scene.mjs';
+import {composeText,words,rhythm,phaseAt,checkPhotos,checkAudio,pacedCues,validCues} from './web/scene.mjs';
 import {demos} from './web/demo.mjs';
+test('pause choices retain the musical return and fit even a three-second track',()=>{
+  for(const duration of [3,3.001,6,12,60]){
+    const rate=100, samples=new Float32Array(Math.ceil(rate*duration));
+    const timing=rhythm([samples],rate,duration);
+    const [early,music,late]=['early','music','late'].map(pace=>pacedCues(timing,pace));
+    assert.ok(early.quoteAtSec < music.quoteAtSec && music.quoteAtSec < late.quoteAtSec);
+    assert.equal(music.quoteAtSec,timing.quoteAtSec);
+    for(const cues of [early,music,late]){
+      assert.equal(cues.returnAtSec,timing.returnAtSec);
+      assert.ok(validCues(cues,timing.endAtSec));
+    }
+  }
+});
 test('a quoted detail stays verbatim, titles contain 3–7 words',()=>{
   for(const text of ['Әдемі!','Тихий двор. Слышно, как скрипит дверь.','Там   мой  самый лучший друг и мама и папа.','Сегодня шёл дождь. Мы впервые за неделю шли домой без спешки.']){
     const {quote,quotes,title}=composeText(text); assert.ok(text.includes(quote));

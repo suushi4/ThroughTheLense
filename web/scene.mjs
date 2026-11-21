@@ -67,6 +67,16 @@ export function validCues(cues, endAtSec) {
     endAtSec - cues.returnAtSec >= 0.299;
 }
 
+// Keep the musical return fixed. The author changes how long the first
+// photograph stays on screen before the words arrive.
+export function pacedCues(timing,pace){
+  const {quoteAtSec,returnAtSec,endAtSec}=timing;
+  const step=Math.min(1.5,endAtSec*0.12);
+  const shift=pace==='early'?-step:pace==='late'?step:0;
+  const earlierOrLater=Math.max(0.3,Math.min(returnAtSec-0.6,quoteAtSec+shift));
+  return {quoteAtSec:shift?Math.round(earlierOrLater*1000)/1000:quoteAtSec,returnAtSec};
+}
+
 // coverWarmth is the mean red minus blue of a small copy of the image, in
 // 0..1 units: about 0.06 for the cool street example, 0.13 for the warm one.
 export async function coverWarmth(file) {

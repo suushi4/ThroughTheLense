@@ -1,6 +1,6 @@
 import {icon} from './icons.mjs';
 import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
-import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,coverWarmth,sceneMontage} from './scene.mjs';
+import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,pacedCues,coverWarmth,sceneMontage} from './scene.mjs';
 import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
 import {demos,exampleFile} from './demo.mjs';
 import {mountPlayer} from './player.mjs';
@@ -9,6 +9,7 @@ import {openShare,shareSupported} from './share.mjs';
 import {logout} from './account.mjs';
 import {avatarHTML,displayName} from './avatar.mjs';
 import {ambienceLibrary,ambienceItem,defaultAmbienceGain,sanitizeAmbience,suggestAmbience} from './ambience.mjs';
+import {soundButton,sampleOutput,daySounds,mountSoundSamples} from './sound-samples.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
@@ -108,10 +109,16 @@ function step(id,number,label){
 function recordedText(state){
   return [state.text.trim(),state.detail?.trim()].filter(Boolean).join('\n\n');
 }
+function selectedQuote(state,text,composition){
+  if(state.quote && text.includes(state.quote))return state.quote;
+  const detail=state.detail?.trim();
+  if(detail && words(detail).length)return detail;
+  return composition?.quote ?? (words(text).length?composeText(text).quote:'');
+}
 function makePreview(state,composition,photo,timing){
   const text=recordedText(state), detail=state.detail?.trim();
   const quotes=[...new Set([...(detail && words(detail).length ? [detail] : []),...composition.quotes])];
-  const quote=state.quote && text.includes(state.quote) ? state.quote : quotes[0];
+  const quote=selectedQuote(state,text,composition);
   const scene={version:1,coverPhotoIndex:state.coverIndex,quote,palette:photo.palette,...timing,
     ...(validCues(state.cues,timing.endAtSec)?state.cues:{})};
   scene.montage=sceneMontage(state.montage,state.photos.length,state.coverIndex);
@@ -311,9 +318,10 @@ async function formPage(stamp,editing){
           <div class="drop">${icon('image')} Добавить фотографии<input type="file" multiple id="photos" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint err-photos"></div>
           <div class="attachments" id="photo-list" role="group" aria-label="Выбор обложки"></div><p id="err-photos" class="error" role="alert"></p></div>
       </section>
-      <aside class="cover-proof" aria-label="Обложка новой записи">
+      <aside class="cover-proof" aria-label="Обложка и фраза новой записи">
         <h2>Обложка дня</h2>
         <figure class="proof-sheet"><div class="proof-window"><img id="proof-image" alt="Выбранная обложка" hidden><span id="proof-placeholder">${icon('image',32)}Здесь появится ваш снимок</span></div><figcaption id="proof-date"></figcaption></figure>
+        <blockquote class="proof-quote" id="proof-quote" hidden></blockquote>
         <p class="proof-song">${icon('music',16)}<span id="proof-song"></span></p>
       </aside>
       <section class="form-step" aria-labelledby="step-song">${step('song','3','Песня дня')}
@@ -331,6 +339,7 @@ async function formPage(stamp,editing){
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
           <div class="ambience-chips" id="ambience-chips"></div>
+          ${sampleOutput}
           <div class="ambience-tools"><label class="sr-only" for="ambience-add">Добавить звук места</label><select id="ambience-add"></select>
             <label class="ambience-gain" for="ambience-gain">Громкость фона<input type="range" id="ambience-gain" min="0" max="100" step="5"></label></div></fieldset>
       </section>
@@ -368,6 +377,11 @@ async function formPage(stamp,editing){
     }
   }
   function changed(){d.revision++;formBusy=false;syncButton();updateProgress();persistDraft(d);}
+  function drawProofQuote(){
+    const node=$('#proof-quote'), text=selectedQuote(d,recordedText(d));
+    node.hidden=!text;
+    node.textContent=text?'«'+text+'»':'';
+  }
   function picks(){
     $('#photo-list').innerHTML=d.photos.map((file,i)=>{
       if(!thumbURLs.has(file))thumbURLs.set(file,objectURL(file));
@@ -402,6 +416,7 @@ async function formPage(stamp,editing){
     else cover.removeAttribute('src');
     $('#proof-date').textContent = d.dayDate ? dateLabel(d.dayDate) : '';
     $('#proof-song').textContent = d.audioName || 'Песня ещё не выбрана';
+    drawProofQuote();
     if(d.audio!==auditionFile){
       const audition=$('#song-audition');
       audition.pause();
@@ -419,9 +434,12 @@ async function formPage(stamp,editing){
   // cannot look at photos); any change by the person stops suggestions.
   let ambienceRequest=0,suggestedFor=null;
   function ambienceGain(){return d.ambience?.[0]?.gain ?? defaultAmbienceGain;}
+  const soundSamples=mountSoundSamples($('.ambience-picks'),()=>$('#song-audition').pause());
+  $('#song-audition').addEventListener('play',soundSamples.stop);
   function renderAmbience(){
     const list=sanitizeAmbience(d.ambience), chosen=new Set(list.map(x=>x.id));
-    $('#ambience-chips').innerHTML=list.map(x=>`<span class="ambience-chip">${icon('wave',14)}${h(ambienceItem(x.id).title)}<button type="button" data-ambience-remove="${x.id}" aria-label="Убрать звук «${h(ambienceItem(x.id).title)}»">${icon('close',13)}</button></span>`).join('');
+    $('#ambience-chips').innerHTML=list.map(x=>`<span class="ambience-chip">${soundButton(x)}<button type="button" data-ambience-remove="${x.id}" aria-label="Убрать звук «${h(ambienceItem(x.id).title)}»">${icon('close',13)}</button></span>`).join('');
+    soundSamples.refresh();
     $('#ambience-add').innerHTML='<option value="">+ Добавить звук</option>'+ambienceLibrary.filter(x=>!chosen.has(x.id)).map(x=>`<option value="${x.id}">${h(x.title)}</option>`).join('');
     $('#ambience-add').disabled=list.length>=4;
     $('#ambience-gain').value=Math.round(ambienceGain()*100);
@@ -431,14 +449,22 @@ async function formPage(stamp,editing){
     else if(d.ambienceSource==='photo')hint.textContent=list.length?'Подобрано по фото — решаете вы.':'По фото звуков не нашлось. Добавьте, если хотите.';
     else if(d.ambienceSource==='text')hint.textContent=list.length?'Подобрано по словам записи — решаете вы.':'Подходящих звуков не нашлось. Добавьте, если хотите.';
     else hint.textContent=list.length?'Звуки выбраны вами.':'Без фона. Добавьте звук, если хотите.';
-    for(const b of main.querySelectorAll('[data-ambience-remove]'))b.onclick=()=>chooseAmbience(sanitizeAmbience(d.ambience).filter(x=>x.id!==b.dataset.ambienceRemove));
+    for(const b of main.querySelectorAll('[data-ambience-remove]'))b.onclick=()=>{
+      chooseAmbience(sanitizeAmbience(d.ambience).filter(x=>x.id!==b.dataset.ambienceRemove));
+      $('#ambience-add').focus({preventScroll:true});
+    };
   }
   function chooseAmbience(list){d.ambience=sanitizeAmbience(list);d.ambienceSource='manual';ambienceRequest++;changed();renderAmbience();}
   async function suggestSounds(){
     if(d.ambienceSource==='manual')return;
     const cover=d.photos[d.coverIndex]||null, text=recordedText(d);
     const key=(cover?.name||'')+'|'+(cover?.size||'')+'|'+text;
-    if(!cover && !text){if(d.ambience!=null){d.ambience=null;renderAmbience();}return;}
+    if(!cover && !text){
+      suggestedFor=null;ambienceRequest++;
+      d.ambience=null;d.ambienceSource='';
+      renderAmbience();
+      return;
+    }
     if(key===suggestedFor)return;
     suggestedFor=key;
     const req=++ambienceRequest;
@@ -501,9 +527,9 @@ async function formPage(stamp,editing){
   };
   $('#date').value=d.dayDate;$('#story').value=d.text;$('#memory-detail').value=d.detail || '';picks();updateProgress();
   $('#date').oninput=e=>{d.dayDate=e.target.value;$('#proof-date').textContent=d.dayDate?dateLabel(d.dayDate):'';changed();errorText('date','');};
-  $('#story').oninput=e=>{d.text=e.target.value;changed();errorText('story','');};
+  $('#story').oninput=e=>{d.text=e.target.value;drawProofQuote();changed();errorText('story','');};
   $('#story').onchange=suggestSounds;
-  $('#memory-detail').oninput=e=>{d.detail=e.target.value;changed();};
+  $('#memory-detail').oninput=e=>{d.detail=e.target.value;d.quote='';drawProofQuote();changed();};
   $('#memory-detail').onchange=suggestSounds;
   $('#ambience-add').onchange=e=>{const id=e.target.value;if(id)chooseAmbience([...sanitizeAmbience(d.ambience),{id,gain:ambienceGain()}]);};
   $('#ambience-gain').onchange=e=>{const gain=Number(e.target.value)/100;chooseAmbience(sanitizeAmbience(d.ambience).map(x=>({...x,gain})));};
@@ -554,7 +580,7 @@ async function formPage(stamp,editing){
     finally{pending--;syncButton();}
   }
   $('#fill-demo').onclick=()=>{
-    if(!editing && !(d.text.trim() || d.photos.length || d.audio)){loadExample();return;}
+    if(!editing && !(recordedText(d) || d.photos.length || d.audio)){loadExample();return;}
     const exampleName=preset?` «${h(preset.title)}»`:'';
     popup(`<h2>Заменить материалы?</h2><p>Текст, фотографии и музыка в форме будут заменены примером${exampleName}.</p><div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Отмена</button><button type="button" class="btn primary" data-confirm>Взять пример</button></div>`,'Заменить материалы');
     dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
@@ -622,6 +648,9 @@ async function previewPage(stamp,editingId){
     <div class="preview-grid">
       <div class="preview-stage">
         <section class="player-box" aria-label="Сцена дня"></section>
+        <fieldset class="pace-picker"><legend>Пауза перед фразой</legend><div class="pace-options">
+          ${[['early','Короче'],['music','По музыке'],['late','Дольше']].map(([id,label])=>`<button type="button" data-pace="${id}" aria-pressed="false">${label}<small></small></button>`).join('')}
+        </div></fieldset>
         <details class="timing-editor"><summary>${icon('wave',18)} <span>Переходы под музыку</span><span class="cue-readout"><span id="cue-source"></span><span id="cue-origin"></span></span>${icon('down',16)}</summary><div class="timing-fields">
           <div><label for="quote-cue">Появление фразы</label><output for="quote-cue"></output><input id="quote-cue" type="range" step="0.01" min="0.3"></div>
           <div><label for="return-cue">Возврат кадра</label><output for="return-cue"></output><input id="return-cue" type="range" step="0.01"></div>
@@ -688,7 +717,8 @@ async function previewPage(stamp,editingId){
   }
   const quoteCue=$('#quote-cue'),returnCue=$('#return-cue'),resetCues=$('#reset-cues');
   const auditionCues=$('#audition-cues');
-  const timingFields=[quoteCue,returnCue,resetCues,auditionCues];
+  const paceButtons=[...main.querySelectorAll('[data-pace]')];
+  const timingFields=[quoteCue,returnCue,resetCues,auditionCues,...paceButtons];
   const roundCue=value=>Math.round(value*100)/100;
   function drawCues(){
     const {quoteAtSec,returnAtSec,endAtSec}=entry.scene;
@@ -704,6 +734,11 @@ async function previewPage(stamp,editingId){
     }
     $('#cue-source').textContent='Фраза '+cueLabel(quoteAtSec)+' · кадр '+cueLabel(returnAtSec);
     $('#cue-origin').textContent=state.cues?'Вручную':'По музыке';
+    for(const button of paceButtons){
+      const cues=pacedCues(preview.timing,button.dataset.pace);
+      button.querySelector('small').textContent=cueLabel(cues.quoteAtSec);
+      button.setAttribute('aria-pressed',String(cues.quoteAtSec===quoteAtSec && cues.returnAtSec===returnAtSec));
+    }
   }
   function applyCues(cues,custom){
     if(!validCues(cues,entry.scene.endAtSec))return;
@@ -713,6 +748,11 @@ async function previewPage(stamp,editingId){
     persistDraft(state);
   }
   const modifyCues=()=>applyCues({quoteAtSec:Number(quoteCue.value),returnAtSec:Number(returnCue.value)},true);
+  for(const button of paceButtons)button.onclick=()=>{
+    const pace=button.dataset.pace;
+    applyCues(pacedCues(preview.timing,pace),pace!=='music');
+    player.seek(0);
+  };
   quoteCue.oninput=returnCue.oninput=modifyCues;
   for(const cue of [quoteCue,returnCue])cue.onchange=()=>player.seek(Number(cue.value));
   auditionCues.onclick=()=>{
@@ -837,14 +877,16 @@ function dayPage(entry,autoplay){
   const view=displayDay(entry);title(entry.title);
   main.innerHTML=heading(entry.title,dateLabel(entry.dayDate)+(entry.example?' · День из примеров':' · Личный день'))+
     `<div class="preview-grid day-grid"><section class="player-box" aria-label="Сцена дня"></section><aside class="day-sidebar">
-      <section class="day-notes"><span class="micro">${icon('music',16)} Песня дня</span><h2>${h(entry.audioName)}</h2></section>
+      <section class="day-notes"><span class="micro">${icon('music',16)} Песня дня</span><h2>${h(entry.audioName)}</h2>${daySounds(entry.scene.ambience)}</section>
       <details class="materials"><summary>Материалы дня</summary>
         <h3>Рассказ</h3><p class="original">${h(entry.text)}</p>
         <h3>Фотографии</h3><div class="source-photos">${view.photos.map((src,i)=>`<button type="button" data-photo="${i}" aria-label="Открыть снимок ${i+1}"><img loading="lazy" src="${h(src)}" alt="${h(view.alts?.[i]||'Снимок '+(i+1))}"></button>`).join('')}</div>
         <h3>Исходный трек</h3><audio controls preload="none" aria-label="Исходный трек"></audio>
       </details></aside></div>`;
   player=mountPlayer($('.player-box'),view,autoplay);
-  const original=$('.materials audio');original.onplay=()=>player?.pause();
+  const original=$('.materials audio'), sounds=$('.day-sounds');
+  const samples=sounds && mountSoundSamples(sounds,()=>{player.pause();original.pause();});
+  original.onplay=()=>{player?.pause();samples?.stop();};
   $('.materials').ontoggle=event=>{
     if(event.currentTarget.open){if(!original.hasAttribute('src'))original.src=view.audio;}
     else original.pause();

@@ -31,6 +31,7 @@ async function run(){
     await p.waitForFunction(()=>document.querySelector('#photo-list')?.children.length===2);
     const detail='На секунду стало слышно, как шины шуршат по мокрой дороге.';
     await p.locator('#memory-detail').fill(detail);
+    assert.equal(await p.locator('#proof-quote').innerText(),'«'+detail+'»');
     await p.locator('#song-trim summary').click();
     await p.locator('#trim-length').selectOption('6');
     await p.locator('#trim-start').fill('1');
@@ -38,6 +39,9 @@ async function run(){
     await p.locator('#audio-list').getByText('Вечерний маршрут · фрагмент').waitFor();
     await p.locator('#prepare').click();
     assert.match(await p.locator('#chosen-quote').innerText(),/шины шуршат/);
+    await p.locator('[data-pace="late"]').click();
+    assert.equal(await p.locator('[data-pace="late"]').getAttribute('aria-pressed'),'true');
+    const chosenPause=Number(await p.locator('#quote-cue').inputValue());
     await p.locator('#scene-montage').selectOption('');
     await p.locator('#scene-montage').selectOption('1');
     const stage=p.locator('.stage');
@@ -55,6 +59,11 @@ async function run(){
     await p.reload();
     await p.getByRole('button',{name:/^За кадром/}).click();
     assert.equal(await stage.getAttribute('data-detail'),'');
+    assert.ok(Math.abs(Number(await p.locator('.meter').inputValue())-chosenPause)<0.02);
+    await p.getByRole('button',{name:/^Послушать «/}).first().click();
+    await p.waitForFunction(()=>document.querySelector('.sample-audio').currentTime>0.12);
+    assert.equal(await stage.getAttribute('data-phase'),'1');
+    await p.getByRole('button',{name:/^Послушать «/}).first().click();
     await p.locator('.day-management summary').click();
     const [zip]=await Promise.all([p.waitForEvent('download'),p.locator('#export-folder').click()]);
     assert.match(zip.suggestedFilename(),/шорох-шин\.zip$/u);
@@ -76,6 +85,8 @@ async function run(){
     assert.equal((await shared.goto(url)).status(),200);
     await shared.getByRole('button',{name:/^За кадром/}).click();
     await shared.locator('.stage[data-detail]').waitFor();
+    await shared.locator('.day-sounds [data-listen]').first().click();
+    await shared.waitForFunction(()=>document.querySelector('.sample-audio').currentTime>0.1);
     await p.locator('[data-revoke]').click();
     await p.locator('[data-create]').waitFor();
     assert.equal((await guest.request.get(url)).status(),404);

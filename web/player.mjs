@@ -222,7 +222,11 @@ export function mountPlayer(host,entry,autoplay=false) {
   function muted(){volume.innerHTML=icon(audio.muted?'mute':'sound',16);volume.setAttribute('aria-label',audio.muted?'Включить звук':'Выключить звук');volume.title=volume.getAttribute('aria-label');volume.setAttribute('aria-pressed',String(audio.muted));}
   audio.onplay=()=>{cancelAnimationFrame(frame);animate();bed?.start();};
   audio.addEventListener('pause',()=>bed?.stop(0.3));
-  audio.onpause=update;audio.ontimeupdate=update;audio.onended=finish;
+  // While paused the selected chapter is authoritative. A delayed timeupdate
+  // can otherwise report a sample just before its cue and restore the old photo.
+  audio.onpause=()=>{if(!disposed)display(position);};
+  audio.ontimeupdate=()=>{if(!audio.paused)update();};
+  audio.onended=finish;
   audio.onerror=()=>{if(!disposed)errorText.textContent='Не удалось воспроизвести звук. Сцену можно посмотреть с помощью ползунка.';};
   play.onclick=()=>audio.paused?start():pause();
   $('.restart').onclick=()=>{seek(0);start();};
@@ -248,6 +252,7 @@ export function mountPlayer(host,entry,autoplay=false) {
   audio.addEventListener('play',stopOriginals);
   function setMontage(value){
     scene.montage=sceneMontage(value,entry.photos.length,scene.coverPhotoIndex);
+    stage.toggleAttribute('data-has-detail',scene.montage?.mode==='detail');
     const index=scene.montage?.detailIndex ?? scene.coverPhotoIndex;
     chapters[1].querySelector('img').src=entry.photos[index];
     renderMontage(currentPhase);

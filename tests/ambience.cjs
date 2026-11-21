@@ -35,6 +35,14 @@ async function run() {
     // A person's change sticks: add, set the volume, remove.
     await page.locator('#ambience-add').selectOption('wind');
     await page.locator('#ambience-add').selectOption('rain');
+    await page.locator('[data-listen="rain"]').click();
+    await page.waitForFunction(()=>document.querySelector('.sample-audio')?.currentTime>0);
+    assert.equal(await page.locator('[data-listen="rain"]').getAttribute('aria-pressed'),'true');
+    await page.locator('[data-listen="wind"]').click();
+    await page.waitForFunction(()=>document.querySelector('.sample-audio')?.currentSrc.endsWith('wind.mp3') && document.querySelector('.sample-audio').currentTime>0);
+    assert.equal(await page.locator('[data-listen="rain"]').getAttribute('aria-pressed'),'false');
+    await page.locator('[data-listen="wind"]').click();
+    assert.equal(await page.locator('.sample-audio').evaluate(audio=>audio.paused),true);
     await page.locator('[data-ambience-remove="street-traffic"]').click();
     await page.locator('#ambience-gain').fill('80');
     await page.locator('#ambience-gain').dispatchEvent('change');
