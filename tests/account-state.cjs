@@ -1,6 +1,8 @@
 // Account state across pages, the home shelf, the journal account menu and
 // the diary track hint. Run against a local server with a throwaway
 // database: TTL_TEST_URL=http://127.0.0.1:8080 npm run test:account
+// Use a fresh server: it signs in several times, and experience.cjs uses up the
+// per-minute sign-in limit on purpose.
 const assert = require('node:assert/strict');
 const {randomUUID} = require('node:crypto');
 const {chromium} = require('playwright');
@@ -85,7 +87,7 @@ async function run() {
     // Journal header: initial letter and a menu with «Выйти».
     const icon = page.locator('#journal-account');
     await page.waitForFunction(() => document.querySelector('#journal-account').classList.contains('signed-in'));
-    assert.equal((await icon.innerText()).trim(), 'S');
+    assert.equal(await icon.locator('.avatar').getAttribute('data-letter'), 'S');
     assert.match(await icon.getAttribute('aria-label'), new RegExp(email.replace(/[.+-]/g, '\\$&')));
 
     // Home shelf shows the account archive and links into it.
@@ -105,16 +107,53 @@ async function run() {
       const narrow = await phone.newPage();
       await narrow.goto('/');
       await narrow.waitForFunction(() => document.querySelector('[data-account-link]')?.hasAttribute('data-signed-in'));
-      assert.equal((await narrow.locator('[data-account-link]').innerText()).trim(), 'Аккаунт');
+      assert.equal(await narrow.locator('[data-account-link] .avatar').isVisible(), true);
+      assert.equal(await narrow.locator('[data-account-link] .label-wide').isVisible(), false);
+      assert.equal(await narrow.locator('[data-account-link]').getAttribute('aria-label'), 'Аккаунт');
       assert.equal(await narrow.evaluate(() => document.documentElement.scrollWidth), width);
       await phone.close();
     }
+
+    // Profile: name, avatar and day count on the account page; the name
+    // and avatar then appear in the headers.
+    await page.goto('/account.html');
+    await page.locator('#profile-form:not([hidden])').waitFor();
+    await page.getByText('1 день в дневнике').waitFor();
+    await page.getByLabel('Имя в дневнике').fill('  Азат  ');
+    await page.locator('.avatar-option').filter({has: page.locator('input[value="lens"]')}).click();
+    await page.getByRole('button', {name: 'Сохранить профиль'}).click();
+    await page.getByText('Профиль сохранён.').waitFor();
+    assert.equal(await page.locator('#profile-title').innerText(), 'Азат');
+    await page.goto('/');
+    await page.waitForFunction(() => document.querySelector('[data-account-link] .label-wide')?.textContent === 'Азат');
+    assert.equal(await page.locator('[data-account-link] .avatar svg').count(), 1);
+    await page.goto('/journal.html#archive');
+    await page.waitForFunction(() => document.querySelector('#journal-account .avatar svg'));
+    await icon.click();
+    await page.locator('#dialog').getByRole('heading', {name: 'Азат'}).waitFor();
+    await page.keyboard.press('Escape');
+
+    // Password change keeps this session and accepts the new password.
+    await page.goto('/account.html');
+    await page.locator('#password-box:not([hidden]) summary').click();
+    await page.getByLabel('Текущий пароль').fill('wrong password');
+    await page.getByLabel('Новый пароль').fill('Another-Pass-27');
+    await page.getByRole('button', {name: 'Сменить пароль'}).click();
+    await page.getByText('Текущий пароль не подходит.').waitFor();
+    await page.getByLabel('Текущий пароль').fill(password);
+    await page.getByRole('button', {name: 'Сменить пароль'}).click();
+    await page.getByText(/Пароль изменён/).waitFor();
+    const check = await browser.newContext({baseURL: base});
+    assert.equal((await check.request.post('/api/login', {headers: {'X-Diary-Request': '1'}, data: {email, password}})).status(), 401);
+    assert.equal((await check.request.post('/api/login', {headers: {'X-Diary-Request': '1'}, data: {email, password: 'Another-Pass-27'}})).status(), 200);
+    await check.close();
 
     // Sign out from the journal menu.
     await page.goto('/journal.html#archive');
     await page.waitForFunction(() => document.querySelector('#journal-account').classList.contains('signed-in'));
     await icon.click();
     await page.locator('#dialog').getByText(email).waitFor();
+    assert.equal(await page.locator('#dialog h2').innerText(), 'Азат');
     await page.locator('#dialog').getByRole('button', {name: 'Выйти'}).click();
     await page.waitForURL('**/account.html');
     await page.getByRole('heading', {name: 'Войти в дневник'}).waitFor();
@@ -123,7 +162,7 @@ async function run() {
     for (const [path, text] of Object.entries(await accountLinks(page))) assert.equal(text, 'Войти', path);
 
     assert.deepEqual(errors, []);
-    console.log('Passed: account state on every page, no sign-in flash, journal menu and sign-out, account shelf, track hint without auto-choice, narrow phones.');
+    console.log('Passed: account state on every page, no sign-in flash, profile name, avatar and day count, password change, journal menu and sign-out, account shelf, track hint without auto-choice, narrow phones.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
