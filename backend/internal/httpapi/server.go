@@ -16,16 +16,19 @@ import (
 	"throughthelense/backend/internal/config"
 	"throughthelense/backend/internal/copies"
 	"throughthelense/backend/internal/store"
+	"throughthelense/backend/internal/vision"
 )
 
 type Server struct {
-	cfg     config.Config
-	web     *os.Root
-	store   *store.Store
-	copies  *copies.Dir
-	limits  map[string]*auth.Limiter
-	uploads chan struct{}
-	checked sync.Map // revision -> copycheck.Meta that passed the strict check
+	cfg                 config.Config
+	web                 *os.Root
+	store               *store.Store
+	copies              *copies.Dir
+	limits              map[string]*auth.Limiter
+	uploads             chan struct{}
+	checked             sync.Map       // revision -> copycheck.Meta that passed the strict check
+	tagger              *vision.Tagger // nil without ANTHROPIC_API_KEY
+	tagLimit, tagBudget *auth.Limiter
 }
 
 // postLimits mirrors POST_LIMITS in account_server.py (requests per minute).
@@ -38,6 +41,9 @@ func New(cfg config.Config, st *store.Store, cp *copies.Dir) (*Server, error) {
 	}
 	uploads := max(cfg.MaxUploads, 1)
 	s := &Server{cfg: cfg, web: web, store: st, copies: cp, limits: map[string]*auth.Limiter{}, uploads: make(chan struct{}, uploads)}
+	s.tagger = vision.New(cfg.AnthropicKey, 8*time.Second)
+	s.tagLimit = auth.NewLimiter(10, time.Minute)
+	s.tagBudget = auth.NewLimiter(200, time.Hour)
 	for path, n := range postLimits {
 		s.limits[path] = auth.NewLimiter(n, time.Minute)
 	}
@@ -140,6 +146,9 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		return s.credentials(w, r, p == "/api/register")
 	case p == "/api/logout" && r.Method == http.MethodPost:
 		return s.logout(w, r)
+	}
+	if p == "/api/ambience/suggest" && r.Method == http.MethodPost {
+		return s.suggestAmbience(w, r)
 	}
 	if strings.HasPrefix(p, "/api/public/") {
 		return s.public(w, r)

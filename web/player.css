@@ -23,6 +23,7 @@ blockquote { margin: 0; }
 .round:hover { background: var(--wash); }
 .playline .round { background: transparent; border-color: var(--line-dark); }
 .playline .round:hover { background: #ffffff16; }
+.playline .ambience-toggle[aria-pressed="false"] { opacity: .55; }
 .playline .playbutton { color: var(--ink); background: var(--light-accent); border-color: var(--light-accent); }
 .playline .playbutton:hover { background: var(--apricot-hover); }
 .playline :focus-visible { outline-color: var(--light-accent); }

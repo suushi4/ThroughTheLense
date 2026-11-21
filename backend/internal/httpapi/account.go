@@ -57,6 +57,9 @@ func (s *Server) runtime(w http.ResponseWriter, r *http.Request) error {
 	// share advertises /api/days/{id}/share. Only this server has it, and only
 	// for days it stores itself, so Supabase mode leaves it out.
 	mode := map[string]any{"mode": "local", "analytics": "local", "share": true}
+	if s.tagger != nil {
+		mode["ambience"] = "vision"
+	}
 	if s.cfg.SupabaseURL != "" && strings.HasPrefix(s.cfg.SupabaseKey, "sb_publishable_") {
 		mode = map[string]any{"mode": "supabase", "analytics": "local", "url": s.cfg.SupabaseURL, "key": s.cfg.SupabaseKey}
 	}

@@ -24,7 +24,10 @@ type Config struct {
 	TrustProxy  bool
 	SupabaseURL string
 	SupabaseKey string
-	MaxUploads  int
+	// AnthropicKey enables photo-based «звуки места» suggestions; empty
+	// means the editor uses its local word rules only.
+	AnthropicKey string
+	MaxUploads   int
 }
 
 func Load() (Config, error) {
@@ -35,6 +38,7 @@ func Load() (Config, error) {
 		PublicBaseURL: strings.TrimRight(env("PUBLIC_BASE_URL", ""), "/"),
 		SupabaseURL:   env("SUPABASE_URL", ""),
 		SupabaseKey:   env("SUPABASE_PUBLISHABLE_KEY", ""),
+		AnthropicKey:  env("ANTHROPIC_API_KEY", ""),
 	}
 	if _, err := strconv.Atoi(c.Port); err != nil {
 		return c, fmt.Errorf("PORT must be a number")

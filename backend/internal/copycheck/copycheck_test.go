@@ -46,6 +46,11 @@ func TestValid(t *testing.T) {
 	if err := check(t, mp3); err != nil {
 		t.Fatalf("mp3: %v", err)
 	}
+	sounds := valid()
+	sounds["ambience"] = []any{map[string]any{"id": "rain", "gain": 0.5}, map[string]any{"id": "future-sound", "gain": 0}}
+	if err := check(t, sounds); err != nil {
+		t.Fatalf("ambience: %v", err)
+	}
 	alias := valid()
 	alias["audio"].(map[string]any)["type"] = "audio/x-wav"
 	if err := check(t, alias); err != nil {
@@ -80,9 +85,15 @@ func TestRejects(t *testing.T) {
 		"audio is jpeg": func(c map[string]any) {
 			c["audio"].(map[string]any)["data"] = b64(fixture.JPEG())
 		},
-		"wav as mp3": func(c map[string]any) { c["audio"].(map[string]any)["type"] = "audio/mpeg" },
-		"no audio":   func(c map[string]any) { delete(c, "audio") },
-		"no name":    func(c map[string]any) { delete(c["audio"].(map[string]any), "name") },
+		"wav as mp3":          func(c map[string]any) { c["audio"].(map[string]any)["type"] = "audio/mpeg" },
+		"no audio":            func(c map[string]any) { delete(c, "audio") },
+		"no name":             func(c map[string]any) { delete(c["audio"].(map[string]any), "name") },
+		"ambience not a list": func(c map[string]any) { c["ambience"] = map[string]any{"id": "rain"} },
+		"ambience gain":       func(c map[string]any) { c["ambience"] = []any{map[string]any{"id": "rain", "gain": 3}} },
+		"ambience id":         func(c map[string]any) { c["ambience"] = []any{map[string]any{"id": "<script>", "gain": 0.5}} },
+		"ambience too many": func(c map[string]any) {
+			c["ambience"] = []any{map[string]any{"id": "a", "gain": 1}, map[string]any{"id": "b", "gain": 1}, map[string]any{"id": "c", "gain": 1}, map[string]any{"id": "d", "gain": 1}, map[string]any{"id": "e", "gain": 1}}
+		},
 	}
 	for name, mutate := range cases {
 		c := valid()
