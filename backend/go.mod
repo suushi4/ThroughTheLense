@@ -3,12 +3,12 @@ module throughthelense/backend
 go 1.26.0
 
 require (
+	github.com/anthropics/anthropic-sdk-go/v2 v2.13.0
 	golang.org/x/crypto v0.59.0
 	modernc.org/sqlite v1.62.0
 )
 
 require (
-	github.com/anthropics/anthropic-sdk-go/v2 v2.13.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
