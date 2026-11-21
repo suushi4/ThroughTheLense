@@ -1,11 +1,12 @@
 import {icon} from './icons.mjs';
 import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
-import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues} from './scene.mjs';
+import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,coverWarmth} from './scene.mjs';
 import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
 import {demos,exampleFile} from './demo.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 import {openShare,shareSupported} from './share.mjs';
+import {logout} from './account.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
@@ -301,7 +302,9 @@ async function formPage(stamp,editing){
         <div class="field"><label class="sr-only" for="song">Выбрать песню</label><span class="hint" id="song-hint">Фрагмент MP3 или WAV от 3 до 60 секунд, до 12 МиБ.</span>
           <div class="drop">${icon('music')} Выбрать песню<input type="file" id="song" accept=".mp3,.wav,.wave,audio/mpeg,audio/wav" aria-describedby="song-hint err-song"></div>
           <div class="attachments" id="audio-list"></div><audio id="song-audition" controls preload="none" aria-label="Послушать выбранную песню" hidden></audio><p id="err-song" class="error" role="alert"></p></div>
-        <div class="field"><label for="soundtrack">Или музыка из примеров</label><select id="soundtrack"><option value="">Выбрать композицию</option>${demos.map(x=>'<option value="'+x.id+'">'+h(x.audioName)+'</option>').join('')}</select></div>
+        <fieldset class="field track-picks"><legend>Нет своей песни? Возьмите трек из дневника</legend>
+          <p class="hint" id="track-hint" role="status"></p>
+          <div class="track-options">${demos.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
       </section>
       <div class="actions stage-actions"><button class="btn primary" type="submit" id="prepare">Посмотреть сцену ${icon('arrow',16)}</button>
         <span class="subtle" id="busy" role="status"></span><span class="subtle" id="draft-status" role="status"></span></div>
@@ -377,7 +380,24 @@ async function formPage(stamp,editing){
       else audition.removeAttribute('src');
       audition.load();
     }
-    $('#soundtrack').value=d.trackId||'';
+    markTracks();
+  }
+  // markTracks shows which diary track is chosen and, as a hint only, which
+  // one is closest in tone to the cover. Nothing is chosen without a click.
+  const warmthOf=new WeakMap();
+  async function markTracks(){
+    for(const b of main.querySelectorAll('[data-track]'))b.setAttribute('aria-pressed',String(b.dataset.track===d.trackId));
+    const cover=d.photos[d.coverIndex], hint=$('#track-hint');
+    const fit=id=>{for(const b of main.querySelectorAll('[data-track]'))b.querySelector('.track-fit').hidden=b.dataset.track!==id;};
+    if(!cover){fit(null);hint.textContent='Добавьте фото, и мы подскажем трек под его тон. Выбор за вами.';return;}
+    if(!warmthOf.has(cover))warmthOf.set(cover,coverWarmth(cover).catch(()=>null));
+    const warmth=await warmthOf.get(cover);
+    if(!current() || cover!==d.photos[d.coverIndex])return;
+    if(warmth===null){fit(null);hint.textContent='';return;}
+    const best=demos.reduce((a,b)=>Math.abs(b.warmth-warmth)<Math.abs(a.warmth-warmth)?b:a);
+    fit(best.id);
+    const tone=warmth<0.07?'холодному':warmth>0.11?'тёплому':'мягкому';
+    hint.textContent='Подсвечен трек, который ближе к '+tone+' тону обложки. Выбор за вами.';
   }
   $('#date').value=d.dayDate;$('#story').value=d.text;picks();updateProgress();
   $('#date').oninput=e=>{d.dayDate=e.target.value;$('#proof-date').textContent=d.dayDate?dateLabel(d.dayDate):'';changed();errorText('date','');};
@@ -431,9 +451,11 @@ async function formPage(stamp,editing){
     dialog.querySelector('[data-confirm]').onclick=()=>{dialog.close();loadExample();};
     dialog.querySelector('[data-cancel]').focus();
   };
-  $('#soundtrack').onchange=async e=>{
-    const item=demos.find(x=>x.id===e.target.value);const req=++audioRequest;
-    if(!item){picks();return;}
+  for(const b of main.querySelectorAll('[data-track]'))b.onclick=()=>chooseTrack(b.dataset.track);
+  const chooseTrack=async id=>{
+    const item=demos.find(x=>x.id===id);
+    if(!item || id===d.trackId)return;
+    const req=++audioRequest;
     changed();pending++;syncButton();
     try{
       const file=await exampleFile(item.audio);if(!current() || req!==audioRequest)return;
@@ -767,12 +789,42 @@ async function route(){
   }
   visited=true;
 }
+// showAccount turns the header icon into the signed-in state: the first
+// letter of the address, and a menu with the address and «Выйти».
+function showAccount(user){
+  const link=document.querySelector('#journal-account');
+  const email=user.email||'';
+  link.setAttribute('aria-label','Ваш аккаунт'+(email?': '+email:''));
+  link.title='Аккаунт'+(email?': '+email:'');
+  link.classList.add('signed-in');
+  link.innerHTML='<span aria-hidden="true">'+h((email.trim()[0]||'·').toUpperCase())+'</span>';
+  link.onclick=event=>{
+    event.preventDefault();
+    player?.pause();
+    popup(`<h2>Ваш аккаунт</h2><p class="subtle">${h(email)}</p>
+      <div class="dialog-actions"><a class="btn secondary" href="/account.html">Страница аккаунта</a>
+      <button class="btn secondary" type="button" data-logout>Выйти</button></div><p class="error" role="alert"></p>`,'Ваш аккаунт');
+    const button=dialog.querySelector('[data-logout]');
+    button.focus();
+    button.onclick=async()=>{
+      button.disabled=true;
+      try{
+        await draftWrites;
+        await logout();
+        location.assign('/account.html');
+      }catch{
+        dialog.querySelector('.error').textContent='Не удалось выйти. Попробуйте ещё раз.';
+        button.disabled=false;
+      }
+    };
+  };
+}
 if(!guestMode){
   try {
     accountUser=await connectDiary();
     shareable=Boolean(accountUser) && await shareSupported();
     if(accountUser){
-      document.querySelector('#journal-account').setAttribute('aria-label','Ваш аккаунт');
+      showAccount(accountUser);
       document.querySelector('#storage-note').textContent='Личные дни хранятся в вашем аккаунте';
     }
   } catch {

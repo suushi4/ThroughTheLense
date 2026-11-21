@@ -35,6 +35,8 @@ h1[tabindex="-1"]:focus { outline: none; }
 .mast nav [aria-current="page"] { text-decoration: underline; text-underline-offset: 7px; }
 .journal-account { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--line-strong); border-radius: 50%; transition: background-color 180ms ease, color 180ms ease; }
 .journal-account:is(:hover,:focus-visible) { background: var(--wash); color: var(--accent); }
+.journal-account.signed-in { border-color: var(--ink); background: var(--ink); color: var(--paper); font: 800 17px/1 var(--display); }
+.journal-account.signed-in:is(:hover,:focus-visible) { border-color: var(--accent); background: var(--accent); color: var(--paper); }
 .brand, .mast nav a, .mast nav button, .foot button { min-height: 44px; display: inline-flex; align-items: center; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; min-height: 44px; border-radius: 24px; border: 1px solid transparent; font-size: 14px; font-weight: 730; }
 .primary { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
@@ -205,6 +207,13 @@ dialog:has(.lightbox) { width: min(900px,96%); padding: 48px 12px 12px; }
 .photo-pick { position: relative; margin-top: 10px; border: 0; }
 .photo-pick .pick-cover { display: flex; flex-direction: column; width: 110px; padding: 3px; border: 1px solid var(--line); border-radius: 5px; background: var(--sheet); text-align: left; overflow: hidden; }
 .pick-cover[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.track-picks { min-inline-size: 0; margin-inline: 0; border: 0; padding: 0; }
+.track-picks legend { padding: 0; margin-bottom: 6px; font-size: 14px; font-weight: 730; }
+.track-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.track-option { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--sheet); font-size: 14px; font-weight: 650; text-align: left; }
+.track-option:is(:hover,:focus-visible) { border-color: var(--line-strong); }
+.track-option[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.track-fit { flex-basis: 100%; padding-left: 23px; color: var(--accent); font-size: 12px; font-weight: 700; }
 .photo-pick .pick-cover img { width: 100%; height: 72px; border-radius: 2px; object-fit: cover; }
 .pick-cover span { min-height: 25px; display: flex; align-items: center; gap: 3px; font-size: 12px; padding: 4px; }
 .photo-pick .remove-photo { position: absolute; top: 4px; right: 4px; width: 44px; min-height: 44px; display: grid; place-items: center; background: var(--sheet); border-radius: 50%; }

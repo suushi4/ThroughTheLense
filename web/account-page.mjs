@@ -23,6 +23,7 @@ function message(text, error = false) {
 function renderForm() {
   heading.textContent = register ? 'Создать аккаунт' : 'Войти в дневник';
   intro.textContent = register ? 'Заведите аккаунт, чтобы сохранять свои дни.' : 'Ваши дни доступны в вашем аккаунте.';
+  intro.hidden = false;
   switchMode.textContent = register ? 'Уже есть аккаунт? Войти' : 'Создать аккаунт';
   submit.textContent = register ? 'Создать аккаунт' : 'Войти';
   password.autocomplete = register ? 'new-password' : 'current-password';
@@ -39,6 +40,7 @@ function renderForm() {
 function renderProfile(user) {
   heading.textContent = 'Ваш дневник';
   intro.textContent = 'Приватные дни доступны в этом аккаунте.';
+  intro.hidden = false;
   profile.querySelector('.account-email').textContent = user.email;
   profile.hidden = false;
   form.hidden = true;
@@ -48,6 +50,7 @@ function renderProfile(user) {
 
 function showUnavailable(text, error = false) {
   intro.hidden = true;
+  drawerLink.hidden = false;
   retry.hidden = false;
   message(text, error);
 }

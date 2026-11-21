@@ -1,10 +1,31 @@
-import {hasDraft,listDays} from './journal.mjs?v=2';
+import {hasDraft,listDays as listGuestDays} from './journal.mjs?v=2';
 import {dateLabel} from './ui.mjs';
 import {icon} from './icons.mjs';
+import {sessionUser} from './account-link.mjs';
 
-const journal='/journal.html?mode=guest';
+const guestJournal='/journal.html?mode=guest';
 
-function dayCard(day) {
+// shelfSource picks the archive the visitor actually writes to: the account
+// once signed in, otherwise this browser's guest archive.
+async function shelfSource() {
+  if (await sessionUser()) {
+    try {
+      const diary=await import('./diary.mjs');
+      if (await diary.connectDiary()) return {
+        journal:'/journal.html', title:'Ваш архив', place:'В вашем аккаунте',
+        loading:'Открываем ваш архив…', failure:'Не удалось прочитать архив аккаунта.',
+        list:diary.listDays
+      };
+    } catch {}
+  }
+  return {
+    journal:guestJournal, title:'Гостевой архив', place:'В этом браузере',
+    loading:'Открываем гостевой архив…', failure:'Не удалось прочитать записи браузера.',
+    list:listGuestDays
+  };
+}
+
+function dayCard(day,journal) {
   const row=document.createElement('li');
   const link=document.createElement('a');
   link.className='home-shelf-day';
@@ -40,17 +61,19 @@ function dayCard(day) {
 }
 
 export async function mountHomeShelf(host) {
+  const source=await shelfSource();
+  const {journal}=source;
   host.innerHTML=`<section class="home-shelf" aria-labelledby="home-shelf-title">
     <div class="home-shelf-head">
-      <div><h3 id="home-shelf-title">Гостевой архив</h3><p>В этом браузере</p></div>
+      <div><h3 id="home-shelf-title">${source.title}</h3><p>${source.place}</p></div>
       <a class="home-shelf-all" href="${journal}#archive">Открыть архив ${icon('arrow',17)}</a>
     </div>
-    <p class="home-shelf-status" role="status">Открываем гостевой архив…</p>
+    <p class="home-shelf-status" role="status">${source.loading}</p>
     <ul class="home-shelf-list" role="list" hidden></ul>
     <a class="home-shelf-next" href="${journal}#new" hidden></a>
   </section>`;
   const status=host.querySelector('.home-shelf-status');
-  const [entries,draft]=await Promise.allSettled([listDays(),hasDraft('new')]);
+  const [entries,draft]=await Promise.allSettled([source.list(),hasDraft('new')]);
   if(!host.contains(status))return;
 
   const recent=(entries.value ?? [])
@@ -58,10 +81,10 @@ export async function mountHomeShelf(host) {
     .slice(0,3);
   if(recent.length) {
     const list=host.querySelector('.home-shelf-list');
-    list.append(...recent.map(dayCard));
+    list.append(...recent.map(day=>dayCard(day,journal)));
     list.hidden=false;
   }
-  status.textContent=entries.status==='rejected' ? 'Не удалось прочитать записи браузера.' :
+  status.textContent=entries.status==='rejected' ? source.failure :
     recent.length ? '' : 'Здесь появится первый сохранённый день.';
   if(draft.value || (entries.status==='fulfilled' && !recent.length)) {
     const action=host.querySelector('.home-shelf-next');
