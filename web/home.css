@@ -21,11 +21,10 @@ img { display: block; max-width: 100%; }
 .wordmark img { flex-shrink: 0; }
 .mast-inner nav { display: flex; gap: clamp(14px, 3vw, 44px); }
 .mast-inner nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 700; }
-.mast-inner nav .account-link { color: var(--accent); white-space: nowrap; }
-.account-link .label-narrow { display: none; }
+.mast-inner nav .account-link { gap: 8px; color: var(--accent); white-space: nowrap; }
+.account-link .label-wide { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 480px) {
-  .account-link .label-wide { display: none; }
-  .account-link .label-narrow { display: inline; }
+  .account-link[data-signed-in] .label-wide { display: none; }
 }
 :is(.mast-inner nav a, .home-foot nav a, .home-foot nav button):hover { text-decoration: underline; text-underline-offset: 5px; }
 

@@ -20,6 +20,20 @@
 .guest-link { display: flex; }
 #signed-in { display: grid; justify-items: start; gap: 8px; }
 .account-email { overflow-wrap: anywhere; }
+.profile-card { display: flex; align-items: center; gap: 14px; }
+.account-name { font-weight: 800; font-size: 20px; overflow-wrap: anywhere; }
+.account-name:empty, .account-days:empty { display: none; }
+.account-days { color: var(--muted); font-size: 14px; }
+.profile-form, #password-form { display: grid; gap: 6px; width: 100%; margin-top: 12px; }
+.avatar-picker { border: 0; padding: 0; margin: 6px 0 0; min-inline-size: 0; }
+.avatar-picker legend { padding: 0; margin-bottom: 6px; font-weight: 700; }
+#avatar-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.avatar-option { display: grid; place-items: center; width: 52px; height: 52px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.avatar-option:has(input:checked) { border-color: var(--accent); }
+.avatar-option:has(input:focus-visible) { outline: 2px solid var(--focus, var(--accent)); outline-offset: 2px; }
+.avatar-option input { position: absolute; opacity: 0; pointer-events: none; }
+.password-box { width: 100%; margin-top: 8px; }
+.password-box summary { min-height: 44px; display: flex; align-items: center; color: var(--accent); font-weight: 700; cursor: pointer; }
 .auth-status:not(:empty) { margin: 8px 0; }
 .auth-status { color: var(--muted); font-size: 14px; }
 .auth-status[data-error] { color: var(--danger); }

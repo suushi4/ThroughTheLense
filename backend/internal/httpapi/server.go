@@ -29,6 +29,7 @@ type Server struct {
 	checked             sync.Map       // revision -> copycheck.Meta that passed the strict check
 	tagger              *vision.Tagger // nil without ANTHROPIC_API_KEY
 	tagLimit, tagBudget *auth.Limiter
+	passwordLimit       *auth.Limiter
 }
 
 // postLimits mirrors POST_LIMITS in account_server.py (requests per minute).
@@ -44,6 +45,7 @@ func New(cfg config.Config, st *store.Store, cp *copies.Dir) (*Server, error) {
 	s.tagger = vision.New(cfg.AnthropicKey, 8*time.Second)
 	s.tagLimit = auth.NewLimiter(10, time.Minute)
 	s.tagBudget = auth.NewLimiter(200, time.Hour)
+	s.passwordLimit = auth.NewLimiter(8, time.Minute)
 	for path, n := range postLimits {
 		s.limits[path] = auth.NewLimiter(n, time.Minute)
 	}
@@ -165,6 +167,14 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 			writeJSON(w, http.StatusOK, map[string]any{"user": user})
 		}
 		return nil
+	case p == "/api/profile" && r.Method == http.MethodPatch, p == "/api/password" && r.Method == http.MethodPost:
+		if !signedIn {
+			return fail(http.StatusUnauthorized, "Войдите в аккаунт.")
+		}
+		if p == "/api/profile" {
+			return s.profile(w, r, user)
+		}
+		return s.changePassword(w, r, user)
 	case strings.HasPrefix(p, "/api/days"):
 		if !signedIn {
 			return fail(http.StatusUnauthorized, "Войдите в аккаунт.")

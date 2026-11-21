@@ -59,3 +59,7 @@
   --radius: 8px;
   --focus: #415a3e;
 }
+
+/* Avatar: a built-in picture or a letter on colour (web/avatar.mjs). */
+.avatar { display: inline-grid; place-items: center; flex: 0 0 auto; width: var(--avatar-size, 28px); height: var(--avatar-size, 28px); border-radius: 50%; background: var(--avatar-bg, #3f5a3c); color: #fbf8f1; overflow: hidden; }
+.avatar[data-letter]::before { content: attr(data-letter); font: 800 calc(var(--avatar-size, 28px) * .46)/1 var(--display, sans-serif); }

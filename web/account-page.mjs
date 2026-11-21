@@ -1,4 +1,6 @@
-import {account, login, logout, currentUser} from './account.mjs';
+import {account, login, logout, currentUser, localDiary, profileSupported, saveProfile, changePassword} from './account.mjs';
+import {avatarPresets, avatarHTML, displayName} from './avatar.mjs';
+import {escapeHTML as h} from './ui.mjs';
 
 const form = document.querySelector('#credentials');
 const heading = document.querySelector('#account-heading');
@@ -33,14 +35,91 @@ function renderForm() {
   else password.removeAttribute('aria-describedby');
   form.hidden = false;
   profile.hidden = true;
+  profileUser = null;
+  profileForm.hidden = passwordBox.hidden = true;
+  passwordBox.querySelector('form')?.remove();
   drawerLink.hidden = false;
   message('');
 }
+
+const profileForm = document.querySelector('#profile-form');
+const passwordBox = document.querySelector('#password-box');
+let profileUser = null;
+
+function plural(n, one, few, many) {
+  const tens = n % 100, units = n % 10;
+  return n + ' ' + (tens > 10 && tens < 15 ? many : units === 1 ? one : units > 1 && units < 5 ? few : many);
+}
+
+function drawIdentity(user) {
+  document.querySelector('#profile-avatar').innerHTML = avatarHTML(user, 64);
+  document.querySelector('#profile-title').textContent = displayName(user);
+}
+
+async function showProfileTools(user) {
+  const [provider, supported] = await Promise.all([account(), profileSupported()]);
+  if (provider.mode === 'local') {
+    localDiary.list().then(days => {
+      document.querySelector('#account-days').textContent = plural(days.length, 'день', 'дня', 'дней') + ' в дневнике';
+    }).catch(() => {});
+  }
+  if (!supported || profileUser !== user) return;
+  document.querySelector('#profile-name').value = user.name || '';
+  const options = [{id: '', label: 'Буква на цвете'}, ...avatarPresets];
+  document.querySelector('#avatar-options').innerHTML = options.map(option =>
+    `<label class="avatar-option" title="${h(option.label)}"><input type="radio" name="avatar" value="${option.id}"${(user.avatar || '') === option.id ? ' checked' : ''} aria-label="${h(option.label)}">${avatarHTML({...user, avatar: option.id}, 44)}</label>`).join('');
+  mountPasswordForm();
+  profileForm.hidden = passwordBox.hidden = false;
+}
+
+profileForm.onsubmit = async event => {
+  event.preventDefault();
+  const save = document.querySelector('#profile-save');
+  save.disabled = true;
+  message('Сохраняем профиль…');
+  try {
+    const user = await saveProfile({
+      name: document.querySelector('#profile-name').value,
+      avatar: profileForm.querySelector('input[name="avatar"]:checked')?.value ?? ''
+    });
+    profileUser = {...profileUser, ...user};
+    drawIdentity(profileUser);
+    document.querySelector('#profile-name').value = user.name || '';
+    message('Профиль сохранён.');
+  } catch (error) { message(error.message, true); }
+  finally { save.disabled = false; }
+};
+
+// The password form exists only while a signed-in user sees the profile,
+// so the sign-in form stays the only «Пароль» field on the page.
+function mountPasswordForm() {
+  if (passwordBox.querySelector('form')) return;
+  passwordBox.append(document.querySelector('#password-template').content.cloneNode(true));
+  passwordBox.querySelector('form').onsubmit = submitPassword;
+}
+
+const submitPassword = async event => {
+  const passwordForm = event.currentTarget;
+  event.preventDefault();
+  const save = document.querySelector('#password-save');
+  save.disabled = true;
+  message('Меняем пароль…');
+  try {
+    await changePassword(document.querySelector('#password-current').value, document.querySelector('#password-new').value);
+    passwordForm.reset();
+    passwordBox.open = false;
+    message('Пароль изменён. На других устройствах нужно войти заново.');
+  } catch (error) { message(error.message, true); }
+  finally { save.disabled = false; }
+};
 
 function renderProfile(user) {
   heading.textContent = 'Ваш дневник';
   intro.textContent = 'Приватные дни доступны в этом аккаунте.';
   intro.hidden = false;
+  profileUser = user;
+  drawIdentity(user);
+  showProfileTools(user);
   profile.querySelector('.account-email').textContent = user.email;
   profile.hidden = false;
   form.hidden = true;

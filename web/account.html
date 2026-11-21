@@ -34,8 +34,24 @@
           <button class="auth-switch" type="button" id="auth-mode">Создать аккаунт</button>
         </form>
         <div id="signed-in" hidden>
-          <p class="account-email"></p>
+          <div class="profile-card"><span id="profile-avatar"></span><div><p class="account-name" id="profile-title"></p><p class="account-email"></p><p class="account-days" id="account-days"></p></div></div>
           <a class="action solid" href="/journal.html#archive">Мой архив</a>
+          <form id="profile-form" class="profile-form" hidden>
+            <label for="profile-name">Имя в дневнике</label>
+            <input id="profile-name" name="name" maxlength="40" autocomplete="nickname" placeholder="Как вас называть">
+            <fieldset class="avatar-picker"><legend>Аватар</legend><div id="avatar-options"></div></fieldset>
+            <button class="action" type="submit" id="profile-save">Сохранить профиль</button>
+          </form>
+          <details id="password-box" class="password-box" hidden><summary>Сменить пароль</summary></details>
+          <template id="password-template">
+            <form id="password-form">
+              <label for="password-current">Текущий пароль</label>
+              <input type="password" id="password-current" autocomplete="current-password" required maxlength="128">
+              <label for="password-new">Новый пароль</label>
+              <input type="password" id="password-new" autocomplete="new-password" required minlength="8" maxlength="128">
+              <p class="account-hint">Не менее 8 символов. На других устройствах понадобится войти заново.</p>
+              <button class="action" type="submit" id="password-save">Сменить пароль</button>
+            </form></template>
           <button class="auth-switch" id="sign-out" type="button">Выйти из аккаунта</button>
         </div>
         <p id="auth-status" class="auth-status" role="status">Открываем аккаунт…</p>
