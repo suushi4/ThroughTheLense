@@ -19,3 +19,7 @@ docs/demo/*.mp4
 
 dist/
 /web/assets/scene-effects.mjs
+
+# Go server data (DATA_DIR)
+/data/
+/backend/data/
