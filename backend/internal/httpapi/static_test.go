@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"throughthelense/backend/internal/config"
+	"throughthelense/backend/internal/store"
 )
 
 func testWeb(t *testing.T) string {
@@ -41,7 +42,12 @@ func newTestServer(t *testing.T, cfg config.Config) *Server {
 	if cfg.Port == "" {
 		cfg.Port = "8080"
 	}
-	s, err := New(cfg)
+	st, err := store.Open(filepath.Join(t.TempDir(), "test.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { st.Close() })
+	s, err := New(cfg, st)
 	if err != nil {
 		t.Fatal(err)
 	}

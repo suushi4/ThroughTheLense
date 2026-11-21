@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"throughthelense/backend/internal/config"
 	"throughthelense/backend/internal/httpapi"
+	"throughthelense/backend/internal/store"
 )
 
 func main() {
@@ -26,7 +28,15 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	handler, err := httpapi.New(cfg)
+	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
+		return err
+	}
+	st, err := store.Open(filepath.Join(cfg.DataDir, "journal.sqlite"))
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	handler, err := httpapi.New(cfg, st)
 	if err != nil {
 		return err
 	}
