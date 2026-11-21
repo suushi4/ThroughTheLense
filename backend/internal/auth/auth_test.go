@@ -41,8 +41,11 @@ func TestLimiter(t *testing.T) {
 	now := time.Unix(1000, 0)
 	l := NewLimiter(2, time.Minute)
 	l.now = func() time.Time { return now }
-	if !l.Allow("a") || !l.Allow("a") || l.Allow("a") {
-		t.Fatal("limit not enforced")
+	// Two attempts fit the window, the third is refused.
+	for i, want := range []bool{true, true, false} {
+		if got := l.Allow("a"); got != want {
+			t.Fatalf("attempt %d: allowed=%v, want %v", i+1, got, want)
+		}
 	}
 	if !l.Allow("b") {
 		t.Fatal("keys share a window")

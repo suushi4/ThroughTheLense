@@ -99,8 +99,6 @@ func writeError(w http.ResponseWriter, r *http.Request, e *apiError) {
 	writeJSON(w, e.status, map[string]string{"message": e.message})
 }
 
-type handlerFunc func(w http.ResponseWriter, r *http.Request) error
-
 // api reproduces JournalAPI.handle_api: host check, then the CSRF guard for
 // every non-GET request, then rate limits, then routing.
 func (s *Server) api(w http.ResponseWriter, r *http.Request) {

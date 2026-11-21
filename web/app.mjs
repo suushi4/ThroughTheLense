@@ -5,6 +5,7 @@ import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from 
 import {demos,exampleFile} from './demo.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
+import {openShare,shareSupported} from './share.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
 const $=selector=>main.querySelector(selector);
@@ -14,7 +15,7 @@ const requestedExample=query.get('example');
 const examplePreset=demos.find(day=>day.id===requestedExample);
 let turn=0, urls=[], player=null, draft=null, preview=null, filter=null, archiveQuery='', toastTimer, playOnOpen='', visited=false;
 let draftWrites=Promise.resolve();
-let accountUser=null;
+let accountUser=null, shareable=false;
 let archiveReturn=null;
 const pendingDrafts=new Map();
 const back='<a class="back" href="#archive">'+icon('back',16)+' К архиву</a>';
@@ -669,8 +670,10 @@ function dayPage(entry,autoplay){
     $('.page-heading').insertAdjacentHTML('beforeend',`<details class="day-management"><summary class="btn secondary">Действия ${icon('down',16)}</summary>
       <div class="day-actions"><a class="btn secondary" href="#edit/${encodeURIComponent(entry.id)}">Редактировать день</a>
         <button class="btn secondary" type="button" id="export-day">Скачать копию</button>
+        ${shareable?'<button class="btn secondary" type="button" id="share-day">Поделиться</button>':''}
         <button class="btn quiet-danger" type="button" id="remove-day">Удалить день</button>
         <p class="error" id="err-export" role="alert"></p></div></details>`);
+    if(shareable)$('#share-day').onclick=()=>{player.pause();original.pause();openShare(entry,popup,dialog);};
     const exportButton=$('#export-day');
     exportButton.onclick=async()=>{
       exportButton.disabled=true;
@@ -767,6 +770,7 @@ async function route(){
 if(!guestMode){
   try {
     accountUser=await connectDiary();
+    shareable=Boolean(accountUser) && await shareSupported();
     if(accountUser){
       document.querySelector('#journal-account').setAttribute('aria-label','Ваш аккаунт');
       document.querySelector('#storage-note').textContent='Личные дни хранятся в вашем аккаунте';
