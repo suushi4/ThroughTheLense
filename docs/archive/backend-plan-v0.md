@@ -1,3 +1,5 @@
+> **Исторический документ.** Первый план бэкенда (загрузка multipart, клиент `web/storage-api.mjs`, Fly.io). В итоге выбран другой вариант: Go-сервер повторяет HTTP-контракт `account_server.py`, развёрнут на Railway. Актуальное описание: [docs/backend-integration.md](../backend-integration.md).
+
 # Бэкенд ThroughTheLense: согласованный план
 
 Хакатон Genesis, трек ArtTech. Владелец бэкенда: Алихан. Фронтенд и визуал: suushi4.
