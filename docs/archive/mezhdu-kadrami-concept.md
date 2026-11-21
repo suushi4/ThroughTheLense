@@ -1,6 +1,8 @@
+> **Исторический документ: рабочее название проекта «Между кадрами».** Актуальные концепция и план: [Office Hours](../designs/throughthelense-office-hours.md), [план разработки](../plans/throughthelense.md).
+
 # ThroughTheLense — второй взгляд
 
-Продуктовая концепция для Genesis ArtTech. Проработана на основе `/office-hours` и продуктовой части `/plan-ceo-review`. Основа — ранее выбранный вариант B «Между кадрами». [Бриф организаторов](../../Unknown-2.pdf) · [Актуальный план ThroughTheLense](../plans/throughthelense.md)
+Продуктовая концепция для Genesis ArtTech. Проработана на основе `/office-hours` и продуктовой части `/plan-ceo-review`. Основа — ранее выбранный вариант B «Между кадрами». Бриф организаторов (не публикуется) · [Актуальный план ThroughTheLense](../plans/throughthelense.md)
 
 ## Решение
 
