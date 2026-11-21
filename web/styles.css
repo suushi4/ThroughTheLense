@@ -35,8 +35,10 @@ h1[tabindex="-1"]:focus { outline: none; }
 .mast nav [aria-current="page"] { text-decoration: underline; text-underline-offset: 7px; }
 .journal-account { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--line-strong); border-radius: 50%; transition: background-color 180ms ease, color 180ms ease; }
 .journal-account:is(:hover,:focus-visible) { background: var(--wash); color: var(--accent); }
-.journal-account.signed-in { border-color: var(--ink); background: var(--ink); color: var(--paper); font: 800 17px/1 var(--display); }
-.journal-account.signed-in:is(:hover,:focus-visible) { border-color: var(--accent); background: var(--accent); color: var(--paper); }
+.journal-account.signed-in { padding: 0; border-color: transparent; overflow: hidden; }
+.journal-account.signed-in:is(:hover,:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.account-menu-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.account-menu-head h2 { margin: 0; overflow-wrap: anywhere; }
 .brand, .mast nav a, .mast nav button, .foot button { min-height: 44px; display: inline-flex; align-items: center; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; min-height: 44px; border-radius: 24px; border: 1px solid transparent; font-size: 14px; font-weight: 730; }
 .primary { background: var(--ink); border-color: var(--ink); color: var(--sheet); }

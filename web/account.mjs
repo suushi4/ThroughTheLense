@@ -94,3 +94,16 @@ export const localDiary = {
   },
   async remove(id) { await api('days/'+encodeURIComponent(id),{method:'DELETE'}); }
 };
+
+// Profile (Go server only; /api/runtime announces it with "profile": true).
+export async function profileSupported() {
+  try { return (await (await api('runtime')).json()).profile === true; }
+  catch { return false; }
+}
+export async function saveProfile(fields) {
+  const response = await api('profile', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fields)});
+  return (await response.json()).user;
+}
+export async function changePassword(current, next) {
+  await api('password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({current, new:next})});
+}

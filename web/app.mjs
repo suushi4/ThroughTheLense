@@ -7,6 +7,7 @@ import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 import {openShare,shareSupported} from './share.mjs';
 import {logout} from './account.mjs';
+import {avatarHTML,displayName} from './avatar.mjs';
 import {ambienceLibrary,ambienceItem,defaultAmbienceGain,sanitizeAmbience,suggestAmbience} from './ambience.mjs';
 
 const main=document.querySelector('main'), dialog=document.querySelector('#dialog');
@@ -840,15 +841,15 @@ async function route(){
 // letter of the address, and a menu with the address and «Выйти».
 function showAccount(user){
   const link=document.querySelector('#journal-account');
-  const email=user.email||'';
-  link.setAttribute('aria-label','Ваш аккаунт'+(email?': '+email:''));
-  link.title='Аккаунт'+(email?': '+email:'');
+  const email=user.email||'', name=displayName(user);
+  link.setAttribute('aria-label','Ваш аккаунт'+(name?': '+name:'')+(email?' ('+email+')':''));
+  link.title='Аккаунт: '+(name?name+' · ':'')+email;
   link.classList.add('signed-in');
-  link.innerHTML='<span aria-hidden="true">'+h((email.trim()[0]||'·').toUpperCase())+'</span>';
+  link.innerHTML=avatarHTML(user,42);
   link.onclick=event=>{
     event.preventDefault();
     player?.pause();
-    popup(`<h2>Ваш аккаунт</h2><p class="subtle">${h(email)}</p>
+    popup(`<div class="account-menu-head">${avatarHTML(user,48)}<div><h2>${h(name||'Ваш аккаунт')}</h2><p class="subtle">${h(email)}</p></div></div>
       <div class="dialog-actions"><a class="btn secondary" href="/account.html">Страница аккаунта</a>
       <button class="btn secondary" type="button" data-logout>Выйти</button></div><p class="error" role="alert"></p>`,'Ваш аккаунт');
     const button=dialog.querySelector('[data-logout]');

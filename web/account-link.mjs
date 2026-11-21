@@ -1,6 +1,8 @@
 // Shows the account state in page headers: «Войти» for visitors, «Мой аккаунт»
 // once signed in. Pages mark the link with data-account-link.
 import {currentUser} from './account.mjs';
+import {avatarHTML, displayName} from './avatar.mjs';
+import {escapeHTML as h} from './ui.mjs';
 
 let session;
 // sessionUser resolves to the signed-in user or null; any failure counts as
@@ -15,9 +17,11 @@ export async function markAccountLinks(root = document) {
   const user = await sessionUser();
   if (!user) return;
   for (const link of links) {
-    // The short label keeps phone headers on one line.
-    link.innerHTML = '<span class="label-wide">Мой аккаунт</span><span class="label-narrow">Аккаунт</span>';
-    link.title = user.email ? 'Аккаунт: ' + user.email : 'Аккаунт';
+    // Avatar and name; on phones only the avatar, so the header fits.
+    const name = displayName(user);
+    link.innerHTML = avatarHTML(user, 26) + '<span class="label-wide">' + h(name || 'Мой аккаунт') + '</span>';
+    link.title = 'Аккаунт: ' + (name ? name + ' · ' : '') + (user.email || '');
+    link.setAttribute('aria-label', 'Аккаунт' + (name ? ': ' + name : ''));
     link.dataset.signedIn = '';
   }
 }
