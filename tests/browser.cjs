@@ -85,7 +85,7 @@ async function run() {
     });
     await page.locator('#prepare').click();
     await page.waitForFunction(()=>typeof window.releaseFirstDecode==='function');
-    await page.locator('#soundtrack').selectOption('demo-stage');
+    await page.locator('[data-track="demo-stage"]').click();
     await page.waitForFunction(()=>document.querySelector('#audio-list').innerText.includes('После занавеса'));
     await page.evaluate(()=>window.releaseFirstDecode());
     await page.waitForTimeout(100);
@@ -101,7 +101,7 @@ async function run() {
     assert.equal(await page.locator('#custom-quote').getAttribute('aria-invalid'),'true');
     await page.locator('#custom-quote').fill('мы гуляли');
     await page.getByRole('link',{name:'К материалам'}).click();
-    await page.locator('#soundtrack').selectOption('demo-cocoa');
+    await page.locator('[data-track="demo-cocoa"]').click();
     await page.waitForFunction(()=>document.querySelector('#audio-list').innerText.includes('Два стаканчика'));
     await page.locator('#prepare').click();
     await page.locator('#save').waitFor();

@@ -59,6 +59,19 @@ export function validCues(cues, endAtSec) {
     endAtSec - cues.returnAtSec >= 0.299;
 }
 
+// coverWarmth is the mean red minus blue of a small copy of the image, in
+// 0..1 units: about 0.06 for the cool street example, 0.13 for the warm one.
+export async function coverWarmth(file) {
+  const bitmap = await createImageBitmap(file, {resizeWidth:32, resizeHeight:32, resizeQuality:'medium'});
+  const canvas = new OffscreenCanvas(32, 32), context = canvas.getContext('2d');
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const data = context.getImageData(0, 0, 32, 32).data;
+  let red = 0, blue = 0;
+  for (let i = 0; i < data.length; i += 4) { red += data[i]; blue += data[i+2]; }
+  return Math.round((red - blue) / (data.length / 4)) / 255;
+}
+
 export function checkPhotos(files) {
   if (files.length < 1 || files.length > 5) throw Error('Выберите от одной до пяти фотографий.');
   for (const file of files) {
