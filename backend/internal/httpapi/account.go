@@ -56,7 +56,7 @@ func readObject(r *http.Request, limit int64) (map[string]json.RawMessage, error
 func (s *Server) runtime(w http.ResponseWriter, r *http.Request) error {
 	// share advertises /api/days/{id}/share. Only this server has it, and only
 	// for days it stores itself, so Supabase mode leaves it out.
-	mode := map[string]any{"mode": "local", "analytics": "local", "share": true}
+	mode := map[string]any{"mode": "local", "analytics": "local", "share": true, "profile": true}
 	if s.tagger != nil {
 		mode["ambience"] = "vision"
 	}

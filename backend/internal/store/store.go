@@ -29,6 +29,10 @@ type Store struct{ db *sql.DB }
 type User struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
+	// Optional profile fields; omitted when unset so the session shape stays
+	// what account_server.py returns.
+	Name   string `json:"name,omitempty"`
+	Avatar string `json:"avatar,omitempty"`
 }
 
 func Open(path string) (*Store, error) {
@@ -112,8 +116,8 @@ func (s *Store) CreateUser(ctx context.Context, id, email, passwordHash string) 
 func (s *Store) UserByEmail(ctx context.Context, email string) (User, string, error) {
 	var u User
 	var hash string
-	err := s.db.QueryRowContext(ctx, "SELECT id, email, password_hash FROM users WHERE email = ?", email).
-		Scan(&u.ID, &u.Email, &hash)
+	err := s.db.QueryRowContext(ctx, "SELECT id, email, display_name, avatar, password_hash FROM users WHERE email = ?", email).
+		Scan(&u.ID, &u.Email, &u.Name, &u.Avatar, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return u, "", ErrNotFound
 	}
@@ -141,8 +145,8 @@ func (s *Store) NewSession(ctx context.Context, tokenHash, userID string, expire
 func (s *Store) SessionUser(ctx context.Context, tokenHash string) (User, error) {
 	var u User
 	err := s.db.QueryRowContext(ctx,
-		"SELECT users.id, users.email FROM sessions JOIN users ON users.id = sessions.user_id "+
-			"WHERE token_hash = ? AND expires > ?", tokenHash, time.Now().Unix()).Scan(&u.ID, &u.Email)
+		"SELECT users.id, users.email, users.display_name, users.avatar FROM sessions JOIN users ON users.id = sessions.user_id "+
+			"WHERE token_hash = ? AND expires > ?", tokenHash, time.Now().Unix()).Scan(&u.ID, &u.Email, &u.Name, &u.Avatar)
 	if errors.Is(err, sql.ErrNoRows) {
 		return u, ErrNotFound
 	}
