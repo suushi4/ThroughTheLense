@@ -93,11 +93,11 @@ func TestRuntime(t *testing.T) {
 	c := newClient(t, newTestServer(t, config.Config{}))
 	w := c.call("GET", "/api/runtime", "")
 	expect(t, w, 200, "")
-	if strings.TrimSpace(w.Body.String()) != `{"analytics":"local","mode":"local"}` {
+	if strings.TrimSpace(w.Body.String()) != `{"analytics":"local","mode":"local","share":true}` {
 		t.Fatalf("runtime %s", w.Body)
 	}
 	sb := newClient(t, newTestServer(t, config.Config{SupabaseURL: "https://x.supabase.co", SupabaseKey: "sb_publishable_k"}))
-	if v := decode(t, sb.call("GET", "/api/runtime", "")); v["mode"] != "supabase" || v["key"] != "sb_publishable_k" {
+	if v := decode(t, sb.call("GET", "/api/runtime", "")); v["mode"] != "supabase" || v["key"] != "sb_publishable_k" || v["share"] != nil {
 		t.Fatalf("supabase runtime %v", v)
 	}
 	secret := newClient(t, newTestServer(t, config.Config{SupabaseURL: "https://x.supabase.co", SupabaseKey: "sb_secret_k"}))
