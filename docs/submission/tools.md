@@ -1,0 +1,55 @@
+# Инструменты
+
+Пометка **уточнить** означает, что факт нужно подтвердить у автора соответствующей части, прежде чем отправлять список жюри. Остальное подтверждено кодом, конфигурацией или историей репозитория.
+
+## Фронтенд
+
+| Инструмент | Для чего | Источник |
+| --- | --- | --- |
+| HTML, CSS, JavaScript-модули без фреймворка | Страницы, редактор, архив, плеер | `web/` |
+| Web Audio API | Анализ энергии трека, выбор моментов фразы и возврата кадра | `web/scene.mjs` |
+| IndexedDB | Гостевой архив и черновики в браузере | `web/journal.mjs` |
+| Canvas | Палитра и миниатюра из обложки | `web/scene.mjs` |
+| React 19, Three.js 0.169, @react-three/fiber, @shadergradient/react | Эффект света в демонстрационной сцене | `package.json`, `web/scene-effects.jsx` |
+| liquid-glass-react | Элемент интерфейса главной. **Уточнить**, используется ли в итоговой версии | `package.json` |
+| esbuild 0.28 | Сборка эффекта света в `dist/` | `scripts/build-visuals.mjs` |
+| Шрифты Raleway и Piazzolla (SIL OFL) | Типографика | `web/fonts/*-OFL.txt` |
+| @supabase/supabase-js | Запасной облачный режим (Supabase Auth и Storage). **Уточнить**, упоминать ли его, если в сдаче он не используется | `web/cloud-diary.mjs`, `supabase/` |
+
+## Бэкенд и развёртывание
+
+| Инструмент | Для чего |
+| --- | --- |
+| Go 1.27 (стандартная библиотека `net/http`) | Сервер сайта и API |
+| SQLite через `modernc.org/sqlite` (без CGO) | Аккаунты, сессии, список дней, публичные ссылки |
+| argon2id (`golang.org/x/crypto/argon2`) | Хеширование паролей |
+| Docker (многоэтапная сборка, `distroless/static`) | Образ: сборка `dist/` на Node 22 и статический Go-бинарь |
+| Railway | Хостинг, постоянный том для базы, автодеплой из `main` |
+| GitHub | Репозиторий, pull request и ревью, источник автодеплоя |
+| Python 3 (`serve.py`) | Первоначальный локальный сервер с тем же API, остаётся для локального запуска |
+| Vercel и Supabase | Альтернативная конфигурация (`vercel.json`, `api/runtime.mjs`, `supabase/migrations`). **Уточнить**, разворачивалась ли она |
+
+## Проверка
+
+| Инструмент | Для чего |
+| --- | --- |
+| Playwright 1.65 (Chromium) | Сквозные тесты: `tests/experience.cjs`, `tests/browser.cjs`, проверка «Поделиться» |
+| `node --test` | Модульные тесты сцены (`scene.test.mjs`) |
+| `go test` | Тесты контракта API, хранения, проверки файлов, публичных ссылок, очистки |
+| `scripts/check-dist.mjs` | Проверка сборки перед деплоем: страницы, синтаксис, ссылки на файлы |
+
+## ИИ-инструменты
+
+| Инструмент | Кто и для чего | Источник |
+| --- | --- | --- |
+| Claude Code (Claude Opus 5.5) | Азат: Go-бэкенд, тесты, Docker и Railway, публичные ссылки, документация | история `integration` (Co-Authored-By) |
+| gstack (навыки для Claude Code) | Office Hours, CEO Review, ревью плана дизайна и инженерного плана | `docs/designs/*office-hours*`, «GSTACK REVIEW REPORT» в `docs/plans/` |
+| Codex | Фронтенд и передача фронтенда. **Уточнить у друга** объём | ветка `codex/frontend-handoff`, PR #2 |
+| Навыки друга: gstack, unslop, ui-ux-pro-max, design-taste-frontend | Дизайн интерфейса, тексты. **Уточнить у друга** точный список и для чего использовался каждый | каталоги `.taste-skill/`, `.agents/`, `.gstack/` в `.gitignore` |
+| ImageGen | Обложка главной: остановка в сумерках из окна автобуса после дождя | README, раздел «Проверка и сдача» |
+| Изображения для трёх примеров (`web/media/*.jpg`) | «Созданные для проекта изображения». **Уточнить у друга** инструмент: ImageGen или свои фотографии | README |
+| Треки примеров (`web/media/*.wav`: «Вечерний маршрут», «Два стаканчика», «После занавеса») | «Инструментальные фрагменты, созданные для проекта». **Уточнить у друга** способ синтеза и лицензию | README |
+
+## Референсы дизайна
+
+Композиция главной — [MNTN, Кристон Шварце](https://www.figma.com/community/file/788675347108478517/mntn-landing-page). Также [фотопортфолио Кайла Скелли](https://dribbble.com/shots/19672514-Photography-Portfolio-Homepage-Template), [Snow Fall](https://www.grahaphics.com/immersive-web) и [The Art of Noticing](https://hankatt.com/en/projects/the-art-of-noticing) (из README).
