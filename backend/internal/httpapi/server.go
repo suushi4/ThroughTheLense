@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"throughthelense/backend/internal/auth"
@@ -24,6 +25,7 @@ type Server struct {
 	copies  *copies.Dir
 	limits  map[string]*auth.Limiter
 	uploads chan struct{}
+	checked sync.Map // revision -> copycheck.Meta that passed the strict check
 }
 
 // postLimits mirrors POST_LIMITS in account_server.py (requests per minute).
@@ -115,16 +117,18 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
+	p := r.URL.Path
+	// Runtime config is public and session-free; platform health checks
+	// (Railway uses Host: healthcheck.railway.app) must reach it.
+	if p == "/api/runtime" && r.Method == http.MethodGet {
+		return s.runtime(w, r)
+	}
 	if !s.allowedHost(r.Host) {
 		return fail(http.StatusForbidden, "Сервер доступен только на этом компьютере.")
 	}
 	safe := r.Method == http.MethodGet || r.Method == http.MethodHead
 	if !safe && (!s.allowedOrigin(r) || r.Header.Get("X-Diary-Request") != "1") {
 		return fail(http.StatusForbidden, "Запрос отклонён.")
-	}
-	p := r.URL.Path
-	if p == "/api/runtime" && r.Method == http.MethodGet {
-		return s.runtime(w, r)
 	}
 	if limiter := s.limits[p]; limiter != nil && r.Method == http.MethodPost {
 		if !limiter.Allow(s.clientIP(r)) {
@@ -138,6 +142,9 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		return s.credentials(w, r, p == "/api/register")
 	case p == "/api/logout" && r.Method == http.MethodPost:
 		return s.logout(w, r)
+	}
+	if strings.HasPrefix(p, "/api/public/") {
+		return s.public(w, r)
 	}
 	user, signedIn, err := s.sessionUser(r)
 	if err != nil {
@@ -183,9 +190,8 @@ func (s *Server) allowedOrigin(r *http.Request) bool {
 // clientIP keys rate limits. Proxy headers count only behind a trusted proxy.
 func (s *Server) clientIP(r *http.Request) string {
 	if s.cfg.TrustProxy {
-		if ip := strings.TrimSpace(r.Header.Get("Fly-Client-IP")); ip != "" {
-			return ip
-		}
+		// The platform proxy appends the address it saw; earlier entries
+		// come from the client and can be forged.
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 			parts := strings.Split(xff, ",")
 			return strings.TrimSpace(parts[len(parts)-1])

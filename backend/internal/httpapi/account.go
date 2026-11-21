@@ -54,9 +54,11 @@ func readObject(r *http.Request, limit int64) (map[string]json.RawMessage, error
 }
 
 func (s *Server) runtime(w http.ResponseWriter, r *http.Request) error {
-	mode := map[string]string{"mode": "local", "analytics": "local"}
+	// share advertises /api/days/{id}/share. Only this server has it, and only
+	// for days it stores itself, so Supabase mode leaves it out.
+	mode := map[string]any{"mode": "local", "analytics": "local", "share": true}
 	if s.cfg.SupabaseURL != "" && strings.HasPrefix(s.cfg.SupabaseKey, "sb_publishable_") {
-		mode["mode"], mode["url"], mode["key"] = "supabase", s.cfg.SupabaseURL, s.cfg.SupabaseKey
+		mode = map[string]any{"mode": "supabase", "analytics": "local", "url": s.cfg.SupabaseURL, "key": s.cfg.SupabaseKey}
 	}
 	writeJSON(w, http.StatusOK, mode)
 	return nil

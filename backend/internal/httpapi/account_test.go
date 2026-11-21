@@ -93,11 +93,11 @@ func TestRuntime(t *testing.T) {
 	c := newClient(t, newTestServer(t, config.Config{}))
 	w := c.call("GET", "/api/runtime", "")
 	expect(t, w, 200, "")
-	if strings.TrimSpace(w.Body.String()) != `{"analytics":"local","mode":"local"}` {
+	if strings.TrimSpace(w.Body.String()) != `{"analytics":"local","mode":"local","share":true}` {
 		t.Fatalf("runtime %s", w.Body)
 	}
 	sb := newClient(t, newTestServer(t, config.Config{SupabaseURL: "https://x.supabase.co", SupabaseKey: "sb_publishable_k"}))
-	if v := decode(t, sb.call("GET", "/api/runtime", "")); v["mode"] != "supabase" || v["key"] != "sb_publishable_k" {
+	if v := decode(t, sb.call("GET", "/api/runtime", "")); v["mode"] != "supabase" || v["key"] != "sb_publishable_k" || v["share"] != nil {
 		t.Fatalf("supabase runtime %v", v)
 	}
 	secret := newClient(t, newTestServer(t, config.Config{SupabaseURL: "https://x.supabase.co", SupabaseKey: "sb_secret_k"}))
@@ -205,14 +205,17 @@ func TestPublicDeployment(t *testing.T) {
 	}
 	c.host = "127.0.0.1:8080"
 	expect(t, c.call("GET", "/api/session", ""), 403, "")
+	c.host = "healthcheck.railway.app"
+	expect(t, c.call("GET", "/api/runtime", ""), 200, "")
+	expect(t, c.call("POST", "/api/runtime", ""), 403, "")
 
 	// Behind the proxy each visitor gets their own window.
 	c.host = "ttl.example"
 	for i := 0; i < 8; i++ {
-		c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.1")
+		c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.1")
 	}
-	expect(t, c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.1"), 429, "")
-	expect(t, c.call("POST", "/api/login", creds, "Fly-Client-IP", "198.51.100.2"), 200, "")
+	expect(t, c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.1"), 429, "")
+	expect(t, c.call("POST", "/api/login", creds, "X-Forwarded-For", "203.0.113.7, 198.51.100.2"), 200, "")
 }
 
 func TestRateLimit(t *testing.T) {

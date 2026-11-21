@@ -42,6 +42,10 @@ func (s *Server) static(w http.ResponseWriter, r *http.Request) {
 		s.sitemap(w, r)
 		return
 	}
+	if m := sharePagePath.FindStringSubmatch(p); m != nil {
+		s.sharePage(w, r, m[1])
+		return
+	}
 	name, ok := filePath(p)
 	if !ok {
 		s.notFound(w, r)

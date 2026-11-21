@@ -16,11 +16,11 @@ type Config struct {
 	Addr    string // listen address
 	DataDir string
 	WebDir  string
-	// PublicBaseURL is the deployed origin such as https://ttl.fly.dev. When it
+	// PublicBaseURL is the deployed origin such as https://ttl.up.railway.app. When it
 	// is empty the server behaves like serve.py: loopback only.
 	PublicBaseURL string
 	// TrustProxy makes rate limiting use the client address reported by the
-	// platform proxy (Fly-Client-IP, X-Forwarded-For).
+	// platform proxy (the last X-Forwarded-For entry).
 	TrustProxy  bool
 	SupabaseURL string
 	SupabaseKey string
@@ -30,7 +30,7 @@ type Config struct {
 func Load() (Config, error) {
 	c := Config{
 		Port:          env("PORT", "8080"),
-		DataDir:       env("DATA_DIR", env("TTL_DATA_DIR", "data")),
+		DataDir:       DataDir(),
 		WebDir:        env("WEB_DIR", defaultWebDir()),
 		PublicBaseURL: strings.TrimRight(env("PUBLIC_BASE_URL", ""), "/"),
 		SupabaseURL:   env("SUPABASE_URL", ""),
@@ -53,16 +53,21 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("PUBLIC_BASE_URL must be an origin like https://example.org")
 		}
 	}
+	// Loopback like serve.py unless deployed; HOST=0.0.0.0 (set in the
+	// Dockerfile) listens on every interface regardless.
 	host := "127.0.0.1"
 	if c.PublicBaseURL != "" {
-		host = ""
+		host = "0.0.0.0"
 	}
-	c.Addr = env("ADDR", net.JoinHostPort(host, c.Port))
+	c.Addr = net.JoinHostPort(env("HOST", host), c.Port)
 	if st, err := os.Stat(filepath.Join(c.WebDir, "index.html")); err != nil || st.IsDir() {
 		return c, fmt.Errorf("WEB_DIR %q has no index.html (run npm run build)", c.WebDir)
 	}
 	return c, nil
 }
+
+// DataDir is DATA_DIR, then TTL_DATA_DIR (serve.py's name), then "data".
+func DataDir() string { return env("DATA_DIR", env("TTL_DATA_DIR", "data")) }
 
 // Secure reports whether the site is served over HTTPS.
 func (c Config) Secure() bool { return strings.HasPrefix(c.PublicBaseURL, "https://") }

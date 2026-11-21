@@ -19,9 +19,31 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "purge-users" {
+		if err := purgeCommand(os.Args[2:], func() (*store.Store, *copies.Dir, error) { return openData(config.DataDir()) }); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func openData(dir string) (*store.Store, *copies.Dir, error) {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, nil, err
+	}
+	st, err := store.Open(filepath.Join(dir, "journal.sqlite"))
+	if err != nil {
+		return nil, nil, err
+	}
+	cp, err := copies.Open(filepath.Join(dir, "copies"))
+	if err != nil {
+		st.Close()
+		return nil, nil, err
+	}
+	return st, cp, nil
 }
 
 func run() error {
@@ -29,16 +51,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
-		return err
-	}
-	st, err := store.Open(filepath.Join(cfg.DataDir, "journal.sqlite"))
+	st, cp, err := openData(cfg.DataDir)
 	if err != nil {
 		return err
 	}
 	defer st.Close()
-	cp, err := copies.Open(filepath.Join(cfg.DataDir, "copies"))
-	if err != nil {
+	if err := purgeAtStart(st, cp); err != nil {
 		return err
 	}
 	handler, err := httpapi.New(cfg, st, cp)
