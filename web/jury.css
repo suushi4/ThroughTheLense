@@ -1,8 +1,29 @@
 .jury { max-width: 1060px; }
+.jury-opening { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: clamp(22px,4vw,54px); }
+.jury-intro h1 { padding-bottom: 16px; }
+.jury-intro .page-lead { margin-top: 16px; }
+.jury-actions, .jury-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; }
+.jury .jury-actions .action { margin-top: 12px; }
+.jury .jury-actions .watch-link { padding-inline: 0; }
+.jury-jump { margin-top: 12px; color: var(--muted); font-size: 14px; }
+.jury-jump a { padding-block: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.jury-print { padding: 8px; border-radius: var(--radius); background: var(--album); color: var(--sheet); }
+.jury-print img { width: 100%; height: auto; border-radius: calc(var(--radius) - 4px); }
+.jury-print figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding: 9px 4px 3px; font-size: 14px; }
+.jury-print figcaption span { color: var(--on-dark); }
+#jury-player > :not(dialog) { display: none; }
 .jury-scenes { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
+.jury #results + p { margin-bottom: 16px; }
 .jury-scenes article { min-width: 0; border-top: 1px solid var(--line); padding-top: 10px; }
 .jury-scenes img { display: block; width: 100%; aspect-ratio: 1.5; height: auto; object-fit: cover; }
 .jury-scenes h3 { margin: 12px 0 4px; }
-.jury-scenes .folder-label { margin-block: 0; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
-@media (max-width: 720px) { .jury-scenes { grid-template-columns: 1fr; } }
+.jury-scenes .folder-label { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .jury-opening, .jury-scenes { grid-template-columns: 1fr; }
+  .jury-actions { column-gap: 10px; }
+}
 .jury-video { display: block; width: min(100%,820px); height: auto; border: 1px solid var(--line); background: var(--album); }
+.jury h2 + .jury-video { margin-top: 12px; }
+.jury-transcript { max-width: 68ch; margin-top: 12px; color: var(--muted); }
+.jury-transcript summary { width: fit-content; min-height: 44px; padding-block: 10px; cursor: pointer; color: var(--accent); font-weight: 650; }
+.jury-transcript time { font-variant-numeric: tabular-nums; }

@@ -9,7 +9,9 @@
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/home.css">
   <link rel="stylesheet" href="/public-page.css">
+  <link rel="stylesheet" href="/player.css">
   <link rel="stylesheet" href="/jury.css">
+  <script type="module" src="/jury.mjs"></script>
   <title>Материалы для жюри · ThroughTheLense</title>
 </head>
 <body>
@@ -19,10 +21,25 @@
     <nav aria-label="Проект"><a href="/">Открыть сайт</a></nav>
   </div></header>
   <main id="content" class="edge public-page jury" tabindex="-1">
-    <h1>Как ощущался день</h1>
-    <p class="page-lead">ThroughTheLense — личный фотодневник для людей, которые хотят сохранить в снимках голос, ритм и детали прожитого дня.</p>
-    <p>Сначала виден кадр. На музыкальном акценте появляется дословная фраза автора, иногда рядом со второй фотографией. После неё возвращается обложка, и у того же снимка появляется новый контекст.</p>
-    <a class="action solid" href="/journal.html?example=demo-street#new">Собрать день из примера</a>
+    <div class="jury-opening">
+      <div class="jury-intro">
+        <h1>Как ощущался день</h1>
+        <p class="page-lead">Сначала вы видите фотографию. На музыкальном акценте появляется фраза автора. Затем вы снова видите тот же кадр и уже знаете, почему он важен.</p>
+        <div class="jury-actions">
+          <a class="action solid" id="jury-play" href="/journal.html?mode=guest#day/demo-street">Смотреть сцену · 12 с</a>
+          <a class="action watch-link" href="/journal.html?example=demo-street&amp;mode=guest#new">Собрать из примера</a>
+        </div>
+        <nav class="jury-jump" aria-label="Материалы проекта">
+          <a href="#video">Ролик о проекте</a>
+          <a href="#results">Три примера и папки</a>
+        </nav>
+      </div>
+      <figure class="jury-print">
+        <img src="/media/street-preview.webp" width="1120" height="747" alt="Вечерние огни отражаются на мокрой дороге к горам" fetchpriority="high">
+        <figcaption><strong>Домой без спешки</strong><span>Постановочный пример</span></figcaption>
+      </figure>
+    </div>
+    <div id="jury-player"></div>
 
     <section aria-labelledby="video">
       <h2 id="video">Демонстрация</h2>
@@ -31,14 +48,24 @@
         <a href="/submission/through-the-lense.mp4">Открыть ролик в MP4</a>
       </video>
       <p>Сборка и сохранение дня, скачивание папки и повторный просмотр из архива. В ролике показан постановочный пример.</p>
+      <details class="jury-transcript">
+        <summary>Сценарий ролика по времени</summary>
+        <ul>
+          <li><time>0:00</time> · Сцена «Домой без спешки». Общий план вечерней улицы сменяется снимком лужи и личной фразой. Затем возвращается первый кадр.</li>
+          <li><time>0:16</time> · В редакторе автор берёт материалы примера, добавляет свою деталь о фонарях в луже и проверяет трек.</li>
+          <li><time>0:28</time> · Автор выбирает фразу и проверяет монтаж в предпросмотре. Затем сохраняет день и скачивает папку с материалами.</li>
+          <li><time>0:44</time> · Из архива можно открыть разные сцены. В записи про какао фраза меняет смысл тёплого кадра, а в записи после репетиции пустой зал получает контекст аплодисментов.</li>
+        </ul>
+      </details>
     </section>
 
     <section aria-labelledby="results">
       <h2 id="results">Примеры воспоминаний</h2>
+      <p>На сайте можно посмотреть три постановочных примера. В ZIP находятся сохранённые версии из редактора с исходниками, текстом и настройками. Фразы и звуки в этих версиях местами отличаются.</p>
       <div class="jury-scenes">
-        <article><a href="/journal.html#day/demo-street"><img src="/media/street-preview.webp" width="1120" height="747" alt="Вечерние огни на мокрой дороге"><h3>Домой без спешки</h3></a><p class="folder-label"><a href="/submission/01-domoy-bez-speshki.zip" download>Скачать 01-domoy-bez-speshki.zip</a></p><p>Общий план улицы сменяется отражением фонаря в луже. На 2,7 секунды появляется фраза про дорогу домой.</p></article>
-        <article><a href="/journal.html#day/demo-cocoa"><img src="/media/cocoa-preview.webp" width="1120" height="747" alt="Два стаканчика у мокрого стекла остановки" loading="lazy"><h3>Какао у остановки</h3></a><p class="folder-label"><a href="/submission/02-kakao-u-ostanovki.zip" download>Скачать 02-kakao-u-ostanovki.zip</a></p><p>Тёплый кадр держится дольше, а на 4,6 секунды открывается личная деталь разговора.</p></article>
-        <article><a href="/journal.html#day/demo-stage"><img src="/media/stage-preview.webp" width="1120" height="747" alt="Пустая сцена со стулом в полосе света" loading="lazy"><h3>Свет после репетиции</h3></a><p class="folder-label"><a href="/submission/03-svet-posle-repeticii.zip" download>Скачать 03-svet-posle-repeticii.zip</a></p><p>Шум зала уходит на фразе об аплодисментах. В финале снова видна пустая сцена.</p></article>
+        <article><a href="/journal.html?mode=guest#day/demo-street"><img src="/media/street-preview.webp" width="1120" height="747" alt="Вечерние огни на мокрой дороге" loading="lazy"><h3>Домой без спешки</h3></a><p>Общий план улицы сменяется отражением фонаря в луже. На 2,7 секунды появляется фраза про дорогу домой.</p><p class="folder-label"><a href="/submission/01-domoy-bez-speshki.zip" download>Скачать 01-domoy-bez-speshki.zip</a></p></article>
+        <article><a href="/journal.html?mode=guest#day/demo-cocoa"><img src="/media/cocoa-preview.webp" width="1120" height="747" alt="Два стаканчика у мокрого стекла остановки" loading="lazy"><h3>Какао у остановки</h3></a><p>Тёплый кадр держится дольше, а на 4,6 секунды открывается личная деталь разговора.</p><p class="folder-label"><a href="/submission/02-kakao-u-ostanovki.zip" download>Скачать 02-kakao-u-ostanovki.zip</a></p></article>
+        <article><a href="/journal.html?mode=guest#day/demo-stage"><img src="/media/stage-preview.webp" width="1120" height="747" alt="Пустая сцена со стулом в полосе света" loading="lazy"><h3>Свет после репетиции</h3></a><p>Шум зала уходит на фразе об аплодисментах. В финале снова видна пустая сцена.</p><p class="folder-label"><a href="/submission/03-svet-posle-repeticii.zip" download>Скачать 03-svet-posle-repeticii.zip</a></p></article>
       </div>
     </section>
 
@@ -49,6 +76,7 @@
         <li><strong>Фотографии.</strong> Обложка задаёт оттенок рамки. Второй снимок может появиться рядом с фразой.</li>
         <li><strong>Песня и звуки места.</strong> Изменения энергии трека задают две отметки на шкале. Фоновый звук можно сравнить и отрегулировать.</li>
       </ul>
+      <p>В сравнении фотография и фраза остаются теми же. С первым треком фраза появляется на 2,7 секунды, со вторым — на 4,6. <a href="/#experiment">Сравнить три песни</a></p>
       <p>Во всех днях сохраняются рамка, типографика и три момента просмотра. Долгая бытовая пауза отсылает к фильмам Ясудзиро Одзу, а переход от общего плана к детали использует принцип соседства кадров в фотокнигах Роберта Фрэнка.</p>
     </section>
     <section aria-labelledby="technical">

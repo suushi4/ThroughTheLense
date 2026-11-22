@@ -5,6 +5,7 @@ import {escapeHTML as h} from './ui.mjs';
 const cards = document.querySelector('#gallery-cards');
 const stage = document.querySelector('#gallery-stage');
 const editor = document.querySelector('#gallery-editor');
+const play = document.querySelector('#gallery-play');
 let player;
 
 cards.innerHTML = demos.map((day, index) => `
@@ -25,4 +26,6 @@ function showExample(index) {
 }
 buttons.forEach((button, index) => button.onclick = () => showExample(index));
 showExample(0);
+play.onclick = () => player.screen(play);
+play.hidden = false;
 window.addEventListener('pagehide', () => player?.pause());

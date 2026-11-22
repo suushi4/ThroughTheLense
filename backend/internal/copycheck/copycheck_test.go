@@ -142,7 +142,7 @@ func TestDiaryTracks(t *testing.T) {
 			t.Fatal(err)
 		}
 		kind, seconds, err := mediacheck.Audio(bytes.NewReader(data), int64(len(data)))
-		if err != nil || kind != "audio/mpeg" || seconds < 30 || seconds > 45 {
+		if err != nil || kind != "audio/mpeg" || seconds < minSeconds || seconds > maxSeconds {
 			t.Errorf("%s: %s %.1fs %v", filepath.Base(path), kind, seconds, err)
 		}
 		c := valid()

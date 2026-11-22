@@ -365,11 +365,11 @@ async function formPage(stamp,editing){
             <label for="trim-length">Длина фрагмента</label><select id="trim-length"></select>
             <button class="btn secondary" id="apply-trim" type="button">Вырезать фрагмент</button>
           </div></details><p id="err-song" class="error" role="alert"></p></div>
-        <fieldset class="field track-picks"><legend>Музыка из дневника</legend>
+        <fieldset class="field track-picks"><legend>Музыка из дневника <small>· ${availableTracks.length} треков</small></legend>
           <label class="sr-only" for="track-query">Поиск музыки из дневника</label>
           <input type="search" id="track-query" placeholder="Название или настроение" autocomplete="off">
           <p class="hint" id="track-hint" role="status"></p>
-          <div class="track-options">${availableTracks.map(track=>`<button type="button" class="track-option" data-track="${track.id}" aria-pressed="false">${icon('music',15)}<span class="track-label"><span>${h(track.audioName)}</span><small>${h(track.mood)}</small><small class="track-fit" hidden>подходит к фото</small></span></button>`).join('')}</div>
+          <div class="track-options" role="region" aria-label="Подборка треков" tabindex="0">${availableTracks.map(track=>`<button type="button" class="track-option" data-track="${track.id}" aria-pressed="false">${icon('music',15)}<span class="track-label"><span>${h(track.audioName)}</span><small>${h(track.mood)}</small><small class="track-fit" hidden>подходит к фото</small></span></button>`).join('')}</div>
           <p class="hint" id="track-empty" role="status"></p></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
@@ -644,6 +644,7 @@ async function formPage(stamp,editing){
       const label=foldText(track.audioName+' '+track.mood);
       trackButtons[index].hidden=!terms.every(term=>label.includes(term));
     }
+    $('.track-options').scrollTop=0;
     $('#track-empty').textContent=trackButtons.every(button=>button.hidden)?'Совпадений нет. Попробуйте другое название или настроение.':'';
   };
   const chooseTrack=async id=>{

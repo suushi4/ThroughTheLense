@@ -31,8 +31,13 @@ async function run() {
       await page.locator('.gallery-card').last().click();
       assert.equal(await page.locator('.gallery-card[aria-pressed="true"]').count(), 1);
       await noOverflow(page, 'gallery ' + width);
-      await page.getByRole('button', {name: 'Воспроизвести', exact: true}).click();
+      for (const selector of ['#gallery-play', '#gallery-editor']) {
+        const box = await page.locator(selector).boundingBox();
+        assert.ok(box && box.y >= 0 && box.y + box.height <= 900, selector + ' should fit in the first viewport');
+      }
+      await page.locator('#gallery-play').click();
       await page.getByRole('button', {name: 'Пауза', exact: true}).waitFor();
+      await page.getByRole('button', {name: 'Закрыть', exact: true}).click();
       await page.locator('#gallery-editor').click();
       await page.waitForURL('**?example=demo-stage#new');
       await page.locator('#fill-demo').click();
@@ -40,6 +45,11 @@ async function run() {
       await page.getByText('Как подбираются звуки?', {exact: true}).click();
       await page.getByRole('link', {name: 'Как используется фото'}).waitFor();
       await noOverflow(page, 'editor ' + width);
+      assert.ok(await page.locator('.track-options').evaluate(panel=>panel.scrollHeight>panel.clientHeight));
+      await page.locator('#track-query').fill('колокольчики');
+      assert.equal(await page.locator('[data-track]:visible').count(),1);
+      await page.locator('[data-track="track-paper-lanterns"]').click();
+      await page.locator('[data-track="track-paper-lanterns"][aria-pressed="true"]').waitFor();
       const date=page.locator('#date');
       assert.equal(await date.getAttribute('max'),'2026-11-30');
       await date.fill('2026-12-01');

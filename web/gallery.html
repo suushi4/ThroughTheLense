@@ -24,9 +24,14 @@
     <p>Выберите день и посмотрите, как фотография, фраза и песня складываются в воспоминание.</p>
     <div id="gallery-cards" class="gallery-cards" role="group" aria-label="Выбрать пример"></div>
     <section aria-labelledby="gallery-scene-title">
-      <h2 id="gallery-scene-title" aria-live="polite"></h2>
+      <div class="gallery-scene-bar">
+        <h2 id="gallery-scene-title" aria-live="polite"></h2>
+        <div class="gallery-scene-actions">
+          <button class="btn primary" id="gallery-play" type="button" hidden>Смотреть сцену</button>
+          <a class="btn secondary" id="gallery-editor" href="/journal.html?example=demo-street#new">Собрать из примера</a>
+        </div>
+      </div>
       <div id="gallery-stage" class="player-box"></div>
-      <a class="btn primary" id="gallery-editor" href="/journal.html?example=demo-street#new">Попробовать с этими материалами</a>
     </section>
     <noscript><p><a href="/journal.html#archive">Открыть примеры в архиве</a></p></noscript>
     <footer class="gallery-footer"><a href="/journal.html#archive">Архив</a><a href="/help.html">Помощь</a><a href="/sounds.html">Звуки места</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></footer>

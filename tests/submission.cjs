@@ -21,6 +21,15 @@ async function run(){
     await p.getByRole('button',{name:'Закрыть',exact:true}).click();
     await p.waitForFunction(()=>document.activeElement?.classList.contains('hero-play'));
 
+    await p.goto('/jury.html');
+    const juryPlay=p.getByRole('link',{name:'Смотреть сцену · 12 с'});
+    await juryPlay.click();
+    const juryScreen=p.locator('#jury-player dialog[open]');
+    await juryScreen.locator('.stage[data-detail]').waitFor();
+    await juryScreen.getByRole('button',{name:'Закрыть',exact:true}).click();
+    await p.waitForFunction(()=>document.activeElement?.id==='jury-play');
+    assert.equal(await p.getByRole('link',{name:'Сравнить три песни'}).getAttribute('href'),'/#experiment');
+
     const register=await context.request.post('/api/register',{
       headers:{'X-Diary-Request':'1'},
       data:{email:'submission-'+Date.now()+'@example.org',password:'Test-day-scenes-2026'}
