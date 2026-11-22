@@ -1,6 +1,7 @@
 import {demos} from './demo.mjs';
 import {mountAtmosphere} from './home-atmosphere.mjs';
 import {mountPlayer} from './player.mjs';
+import {mountChapterReveals} from './chapter-reveal.mjs';
 
 function nearViewport(host, load, fallbackHref, fallbackText) {
   const observer = new IntersectionObserver(([entry]) => {
@@ -175,6 +176,7 @@ if (journalRoutes.test(location.hash)) {
   heroPlay.onclick = () => player.screen(heroPlay);
   opening.querySelector('.memory-dock').hidden = false;
   switcher.hidden = false;
+  mountChapterReveals(motion);
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     if (!visible && !dialog.open) player.pause();

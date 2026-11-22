@@ -6,6 +6,15 @@
   background: linear-gradient(to bottom, var(--paper), var(--chapter-paper) 24%, var(--chapter-paper) 76%, var(--paper));
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  [data-chapter-reveal="waiting"] { opacity: .16; }
+  [data-chapter-reveal="playing"] { animation: chapter-reveal 220ms cubic-bezier(.2,.65,.3,1); }
+  @keyframes chapter-reveal {
+    from { opacity: .16; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
 .chapter-band {
   position: sticky;
   top: 0;

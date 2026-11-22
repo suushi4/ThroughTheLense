@@ -231,6 +231,20 @@ async function run() {
         await scene.locator('.scene-effects:not([data-ready])').waitFor({state:'attached'});
       } else assert.equal(requests,0);
       await scene.emulateMedia({reducedMotion:'no-preference'});
+      await scene.reload();
+      const entrance=await scene.locator('#experiment .chapter-heading').evaluate(async heading=>{
+        const started=new Promise(resolve=>heading.addEventListener('animationstart',()=>{
+          const style=getComputedStyle(heading);
+          resolve({delay:style.animationDelay,duration:style.animationDuration,opacity:Number(style.opacity)});
+        },{once:true}));
+        const edge=window.innerHeight-12;
+        scrollTo({top:scrollY+heading.getBoundingClientRect().top-edge,behavior:'instant'});
+        return Promise.race([started,new Promise(resolve=>setTimeout(()=>resolve(null),1000))]);
+      });
+      assert.ok(entrance && entrance.opacity<1,'Text should animate upon entering the viewport');
+      assert.equal(entrance.delay,'0s');
+      assert.ok(parseFloat(entrance.duration)<=.25,'Entrance should finish promptly');
+      await scene.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#experiment .chapter-heading')).opacity)===1);
       const positions=await scene.locator('#story-title').evaluate(async heading=>{
         const chapter=heading.closest('section');
         heading.scrollIntoView({behavior:'instant',block:'center'});
@@ -245,7 +259,7 @@ async function run() {
         return samples;
       });
       assert.ok(positions.every(sample=>sample.opacity===1 && Math.abs(sample.offset-positions[0].offset)<1),
-        'Chapter text should be readable and stay in place from its first visible frame');
+        'Jumping into a chapter should show the text immediately without moving it');
       await visual.close();
     }
     assert.deepEqual(errors,[]);
