@@ -82,7 +82,7 @@ async function run() {
     assert.match(await page.locator('#track-hint').innerText(), /Выбор за вами/);
     await page.locator('[data-track="track-night-talk"]').click();
     await page.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Ночной разговор'));
-    assert.equal(await page.locator('[data-track="demo-cocoa"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-track="track-night-talk"]').getAttribute('aria-pressed'), 'true');
     assert.equal(await page.locator('[data-track="track-morning-light"]').getAttribute('aria-pressed'), 'false');
 
     // Save the day into the account.
