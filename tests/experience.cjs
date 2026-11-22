@@ -175,7 +175,7 @@ async function run() {
     await freshPage.getByText('Неверная почта или пароль.').waitFor();
     await freshPage.getByLabel('Пароль').fill(password);
     await freshPage.getByRole('button',{name:'Войти',exact:true}).click();
-    await freshPage.locator('.day-card').filter({hasText:expectedDay}).click();
+    await freshPage.locator('#personal-shelf .home-shelf-day').filter({hasText:expectedDay}).click();
     await freshPage.locator('.stage img').waitFor();
     await freshPage.getByRole('button',{name:/^За кадром/}).click();
     await freshPage.locator('.stage[data-phase="1"] .reveal').waitFor();
