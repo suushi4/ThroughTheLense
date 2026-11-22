@@ -2,11 +2,23 @@
 
 Личный фотодневник, который сохраняет не событие, а то, как ощущался день. Из снимка, нескольких строк и песни он собирает короткую сцену: сначала кадр, затем на музыкальном акценте появляется дословная фраза автора, и снова возвращается тот же кадр. Проект сделан для Genesis Hackathon, трек ArtTech.
 
-**Живой прототип:** <https://throughthelense-production.up.railway.app>
+[Открыть прототип](https://throughthelense-production.up.railway.app/) · [Страница для жюри](https://throughthelense-production.up.railway.app/jury.html) · [Редактор с примером](https://throughthelense-production.up.railway.app/journal.html?mode=guest&example=demo-street#new) · [Гостевой архив](https://throughthelense-production.up.railway.app/journal.html?mode=guest#archive)
+
+## Проверка за одну минуту
+
+1. Откройте [«Домой без спешки»](https://throughthelense-production.up.railway.app/journal.html?mode=guest#day/demo-street) и запустите сцену. Посмотрите, как после фразы возвращается первый снимок.
+2. В [сравнении песен](https://throughthelense-production.up.railway.app/#experiment) оставьте кадр и фразу прежними. «Вечерний маршрут» раскрывает фразу на **2,7 с**, а «Два стаканчика» — на **4,6 с**.
+3. В [редакторе](https://throughthelense-production.up.railway.app/journal.html?mode=guest&example=demo-street#new) возьмите материалы примера, соберите сцену и сохраните день. В меню «Действия» скачайте папку. Для восстановления распакуйте ZIP и откройте `day.json` в гостевом архиве.
+
+| Результат | Что передаёт атмосферу | Папка дня |
+| --- | --- | --- |
+| [Домой без спешки](https://throughthelense-production.up.railway.app/journal.html?mode=guest#day/demo-street) | Отражение в луже, шум мокрой дороги и второй снимок на фразе | [01-domoy-bez-speshki.zip](https://throughthelense-production.up.railway.app/submission/01-domoy-bez-speshki.zip) |
+| [Какао у остановки](https://throughthelense-production.up.railway.app/journal.html?mode=guest#day/demo-cocoa) | Длинная пауза, тёплая обложка и разговор на фоне улицы | [02-kakao-u-ostanovki.zip](https://throughthelense-production.up.railway.app/submission/02-kakao-u-ostanovki.zip) |
+| [Свет после репетиции](https://throughthelense-production.up.railway.app/journal.html?mode=guest#day/demo-stage) | Пустая сцена и затихающий фон на словах об аплодисментах | [03-svet-posle-repeticii.zip](https://throughthelense-production.up.railway.app/submission/03-svet-posle-repeticii.zip) |
 
 ![Главная ThroughTheLense](docs/images/home.jpg)
 
-[Материалы для жюри](https://throughthelense-production.up.railway.app/jury.html) · [Описание и сценарий](docs/submission/)
+[Описание проекта](docs/submission/description.md) · [Художественные приёмы](docs/submission/techniques.md) · [Инструменты и источники](docs/submission/tools.md) · [Как проверить результаты](docs/submission/results.md)
 
 ## Запуск локально
 
