@@ -1,0 +1,46 @@
+name: Verify personal diary on Go
+on:
+  pull_request:
+    branches: [personal-diary-home]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Build and install browser
+        run: |
+          npm ci
+          npm run build
+          node scripts/check-dist.mjs
+          npx playwright install --with-deps chromium
+      - name: Check Go
+        run: |
+          go -C backend vet ./...
+          go -C backend test ./...
+          go -C backend build -o "$RUNNER_TEMP/ttl-server" ./cmd/server
+      - name: Browser regressions
+        run: |
+          run_test() {
+            local port="$1" suite="$2" server
+            DATA_DIR="$(mktemp -d)" WEB_DIR="$PWD/dist" HOST=127.0.0.1 PORT="$port" "$RUNNER_TEMP/ttl-server" &
+            server=$!
+            trap 'kill "$server" 2>/dev/null || true' RETURN
+            curl -fsS --retry 20 --retry-connrefused --retry-delay 1 "http://127.0.0.1:$port/api/runtime" >/dev/null
+            TTL_TEST_URL="http://127.0.0.1:$port" npm run "$suite"
+          }
+          run_test 8080 test:diary-extras
+          run_test 8081 test:account
+          run_test 8082 test:experience
+          run_test 8083 test:submission
+          run_test 8084 test:ambience
+          run_test 8085 test:browser
