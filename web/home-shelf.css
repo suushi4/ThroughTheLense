@@ -1,4 +1,4 @@
-#home-shelf {
+#home-shelf, #personal-shelf {
   --shelf-pad: clamp(14px,4vw,28px);
   --empty-shelf-height: 10rem;
   min-block-size: calc(var(--empty-shelf-height) + 2 * var(--shelf-pad));

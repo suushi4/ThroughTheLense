@@ -1,4 +1,12 @@
 const paths = {
+  'avatar-sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+  'avatar-headphones':'<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="13" width="5" height="7" rx="2"/><rect x="16" y="13" width="5" height="7" rx="2"/>',
+  'avatar-mountain':'<path d="m2 19 7-11 4 6 3-4 6 9zM7 11l2 2 2-2"/><circle cx="17" cy="5" r="2"/>',
+  'avatar-waves':'<path d="M2 7c3-4 7-4 10 0s7 4 10 0M2 12c3-4 7-4 10 0s7 4 10 0M2 17c3-4 7-4 10 0s7 4 10 0"/>',
+  'avatar-moon':'<path d="M20 16A9 9 0 0 1 8 4a9 9 0 1 0 12 12Zm-3-12v6m-3-3h6"/>',
+  'avatar-spark':'<path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z"/>',
+  'avatar-leaf':'<path d="M5 19c-4-9 4-15 15-15 0 11-6 19-15 15Zm0 0 9-9M5 19l-2 2"/>',
+  'avatar-compass':'<circle cx="12" cy="12" r="9"/><path d="m16 8-2 6-6 2 2-6Z"/>',
   shuffle:'<path d="M3 6h2c5 0 6 12 11 12h5m-4-4 4 4-4 4M3 18h2c2 0 3-2 4-4m4-4c1-2 2-4 5-4h3m-4-4 4 4-4 4"/>',
   search:'<circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/>',
   aperture:'<circle cx="12" cy="12" r="9.4"/><path d="m13.6 2.8 5.1 8.8m2.4 2.1H11m7.1 5.6-5.1-8.8m-2.6 10.7-5.1-8.8M3 10.4h10.2M6 4.7l5.1 8.8"/>',

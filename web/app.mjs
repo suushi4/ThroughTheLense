@@ -4,6 +4,7 @@ import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
 import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,pacedCues,coverWarmth,sceneMontage} from './scene.mjs';
 import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
 import {demos,exampleFile} from './demo.mjs';
+import {diaryTracks,libraryTracks} from './tracks.mjs';
 import {mountPlayer} from './player.mjs';
 import {exportDay,importDay} from './transfer.mjs';
 import {openShare,shareSupported} from './share.mjs';
@@ -175,9 +176,9 @@ async function archive(stamp) {
   if(stamp!==turn)return;
   const unavailable=entries.status==='rejected';
   let own=entries.value ?? [];
-  if(filter===null)filter=own.length?'mine':'all';
+  if(filter===null || accountUser)filter=accountUser || own.length?'mine':'all';
   own=own.map(x=>({...x,thumbnail:objectURL(x.thumbnail)}));
-  const days=[...own,...demos].sort((a,b)=>b.dayDate.localeCompare(a.dayDate)||b.id.localeCompare(a.id));
+  const days=[...own,...(accountUser?[]:demos)].sort((a,b)=>b.dayDate.localeCompare(a.dayDate)||b.id.localeCompare(a.id));
   let featureIndex=0, visible=[];
   main.innerHTML = `<section class="archive-hero" aria-labelledby="archive-heading"><div class="wrap intro">
       <h1 id="archive-heading">Архив дней</h1>
@@ -187,7 +188,7 @@ async function archive(stamp) {
     <section class="collection wrap" aria-label="Записи архива">
       <div class="archive-tools">
         <div class="search-field"><label for="archive-query" class="sr-only">Поиск по архиву</label><div class="archive-search">${icon('search',18)}<input id="archive-query" type="search" aria-label="Поиск по названию, песне или дате" placeholder="Название, песня или дата" autocomplete="off"><button type="button" id="clear-query" aria-label="Очистить поиск" hidden>${icon('close',16)}</button></div></div>
-        <div class="filters" role="group" aria-label="Какие дни показать">${[['all','Все дни'],['mine','Мои дни'],['demo','Примеры']].map(([key,label])=>'<button class="chip" type="button" data-filter="'+key+'">'+label+'</button>').join('')}</div>
+        <div class="filters" role="group" aria-label="Какие дни показать"${accountUser?' hidden':''}>${[['all','Все дни'],['mine','Мои дни'],['demo','Примеры']].map(([key,label])=>'<button class="chip" type="button" data-filter="'+key+'">'+label+'</button>').join('')}</div>
       </div>
       <div class="archive-view" role="group" aria-label="Вид архива">
         <button class="chip" type="button" data-archive-view="list">Список</button>
@@ -292,7 +293,7 @@ async function archive(stamp) {
     else if(archiveQuery.trim())content='<div class="empty">'+icon('search',28)+'<h3>Совпадений пока нет</h3><p>Попробуйте другое название, песню или дату.</p><button id="reset-search" class="btn secondary">Сбросить поиск</button></div>';
     else if(unavailable)content='';
     else content='<div class="empty">'+icon('folder',29)+'<h3>Ваш первый день</h3><p>Добавьте снимок, музыку и пару строк о том, что запомнилось.</p><a class="btn primary" id="start-first-day" href="#new">Записать день</a></div>';
-    $('#folders').innerHTML=(unavailable?'<p class="error" role="alert">Личный архив сейчас недоступен. Вы можете посмотреть три примера.</p>':'')+content;
+    $('#folders').innerHTML=(unavailable?'<p class="error" role="alert">Архив сейчас недоступен. Попробуйте обновить страницу.</p>':'')+content;
     if($('#reset-search'))$('#reset-search').onclick=clearQuery;
     main.querySelectorAll('[data-month-step]').forEach(button=>button.onclick=()=>{
       const step=button.dataset.monthStep;
@@ -329,12 +330,13 @@ async function formPage(stamp,editing){
   title(pageName);
   const d=draft;
   const preset=editing?undefined:examplePreset;
-  const sample=preset ?? demos[0];
+  const sample=preset ?? (accountUser?null:demos[0]);
+  const availableTracks=accountUser ? libraryTracks : diaryTracks;
   const sampleLabel=preset?`Взять материалы «${preset.title}»`:'Взять материалы примера';
   main.innerHTML=heading(pageName,'Выберите, что поможет вспомнить этот день.')+`
     <div class="form-wrap"><form novalidate>
       <div class="form-line"><div class="material-status"><progress id="material-progress" max="3" value="0" aria-label="Готовность материалов"></progress><span id="material-count">0 из 3 готово</span></div>
-        <button type="button" class="textbtn" id="fill-demo">${icon('folder',15)} ${h(sampleLabel)}</button></div>
+        ${sample?`<button type="button" class="textbtn" id="fill-demo">${icon('folder',15)} ${h(sampleLabel)}</button>`:''} </div>
       <section class="form-step" aria-labelledby="step-story">${step('story','1','Рассказ')}
         <div class="field"><label for="date">Дата дня</label><input type="date" id="date" required aria-describedby="err-date"><p id="err-date" class="error" role="alert"></p></div>
         <div class="field"><label for="story">Как прошёл день?</label><textarea id="story" required rows="4" placeholder="Запомнилось, как…" aria-describedby="err-story"></textarea><p id="err-story" class="error" role="alert"></p></div>
@@ -362,7 +364,7 @@ async function formPage(stamp,editing){
           </div></details><p id="err-song" class="error" role="alert"></p></div>
         <fieldset class="field track-picks"><legend>Нет своей песни? Возьмите трек из дневника</legend>
           <p class="hint" id="track-hint" role="status"></p>
-          <div class="track-options">${demos.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
+          <div class="track-options">${availableTracks.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false" title="${h(x.mood)}">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
           <details class="collection-help"><summary>Как подбираются звуки?</summary><p>Когда доступен подбор по фото, проверяется обложка. В остальных случаях учитываются слова записи. Любой звук можно убрать или заменить вручную. <a href="/privacy.html#ambience">Как используется фото</a></p></details>
@@ -515,7 +517,7 @@ async function formPage(stamp,editing){
     const warmth=await warmthOf.get(cover);
     if(!current() || cover!==d.photos[d.coverIndex])return;
     if(warmth===null){fit(null);hint.textContent='';return;}
-    const best=demos.reduce((a,b)=>Math.abs(b.warmth-warmth)<Math.abs(a.warmth-warmth)?b:a);
+    const best=availableTracks.reduce((a,b)=>Math.abs(b.warmth-warmth)<Math.abs(a.warmth-warmth)?b:a);
     fit(best.id);
     const tone=warmth<0.07?'холодному':warmth>0.11?'тёплому':'мягкому';
     hint.textContent='Подсвечен трек, который ближе к '+tone+' тону обложки. Выбор за вами.';
@@ -608,7 +610,7 @@ async function formPage(stamp,editing){
     }catch{if(current())errorText('photos','Не удалось загрузить материалы примера.');}
     finally{pending--;syncButton();}
   }
-  $('#fill-demo').onclick=()=>{
+  if(sample)$('#fill-demo').onclick=()=>{
     if(!editing && !(recordedText(d) || d.photos.length || d.audio)){loadExample();return;}
     const exampleName=preset?` «${h(preset.title)}»`:'';
     popup(`<h2>Заменить материалы?</h2><p>Текст, фотографии и музыка в форме будут заменены примером${exampleName}.</p><div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Отмена</button><button type="button" class="btn primary" data-confirm>Взять пример</button></div>`,'Заменить материалы');
@@ -618,7 +620,7 @@ async function formPage(stamp,editing){
   };
   for(const b of main.querySelectorAll('[data-track]'))b.onclick=()=>chooseTrack(b.dataset.track);
   const chooseTrack=async id=>{
-    const item=demos.find(x=>x.id===id);
+    const item=availableTracks.find(x=>x.id===id);
     if(!item || id===d.trackId)return;
     const req=++audioRequest;
     changed();pending++;syncButton();
@@ -833,7 +835,7 @@ async function previewPage(stamp,editingId){
     else custom.value=quotes[Number(choice.value)];
     checkQuote();
   };
-  const sample=demos.find(item=>item.audioName!==entry.audioName);
+  const sample=(accountUser?libraryTracks:diaryTracks).find(item=>item.audioName!==entry.audioName);
   const tracks=[{id:state.trackId,name:entry.audioName,file:entry.audioFile,url:view.audio,timing:preview.timing,cues:state.cues},
     {id:sample.id,name:sample.audioName,cues:null}];
   let activeTrack=0,changingTrack=false,saving=false;

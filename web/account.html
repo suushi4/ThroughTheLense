@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/home.css">
   <link rel="stylesheet" href="/account.css">
   <link rel="stylesheet" href="/diary-extras.css">
+  <link rel="stylesheet" href="/personal-home.css">
   <link rel="stylesheet" href="/consent.css">
   <script type="module" src="/consent.mjs"></script>
   <title>Аккаунт · ThroughTheLense</title>
@@ -36,7 +37,12 @@
         </form>
         <div id="signed-in" hidden>
           <div class="profile-card"><span id="profile-avatar"></span><div><p class="account-name" id="profile-title"></p><p class="account-email"></p><p class="account-days" id="account-days"></p></div></div>
+          <dl class="profile-stats" hidden>
+            <div><dt>Первый день</dt><dd id="profile-first-day"></dd></div>
+            <div><dt>Последняя запись</dt><dd id="profile-last-day"></dd></div>
+          </dl>
           <a class="action solid" href="/journal.html#archive">Мой архив</a>
+          <a class="action" href="/">Личная главная</a>
           <form id="profile-form" class="profile-form" hidden>
             <label for="profile-name">Имя в дневнике</label>
             <input id="profile-name" name="name" maxlength="40" autocomplete="nickname" placeholder="Как вас называть">

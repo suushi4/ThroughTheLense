@@ -1,6 +1,8 @@
-import {account, login, logout, currentUser, localDiary, profileSupported, saveProfile, changePassword} from './account.mjs';
+import {account, login, logout, currentUser, profileSupported, saveProfile, changePassword} from './account.mjs';
 import {avatarPresets, avatarHTML, displayName} from './avatar.mjs';
-import {escapeHTML as h} from './ui.mjs';
+import {escapeHTML as h, dateLabel} from './ui.mjs';
+import {recordedDates, daysLabel} from './diary-stats.mjs';
+import {connectDiary,listDays} from './diary.mjs';
 
 const form = document.querySelector('#credentials');
 const heading = document.querySelector('#account-heading');
@@ -14,7 +16,7 @@ const submit = document.querySelector('#auth-submit');
 const profile = document.querySelector('#signed-in');
 const signOut = document.querySelector('#sign-out');
 const drawerLink = document.querySelector('.guest-link');
-const goToJournal = '/journal.html#archive';
+const goToHome = '/';
 let register = false;
 
 function message(text, error = false) {
@@ -46,9 +48,20 @@ const profileForm = document.querySelector('#profile-form');
 const passwordBox = document.querySelector('#password-box');
 let profileUser = null;
 
-function plural(n, one, few, many) {
-  const tens = n % 100, units = n % 10;
-  return n + ' ' + (tens > 10 && tens < 15 ? many : units === 1 ? one : units > 1 && units < 5 ? few : many);
+
+async function showDiaryStats(user) {
+  try {
+    if (!(await connectDiary())) return;
+    const days = await listDays();
+    if (profileUser?.id !== user.id) return;
+    document.querySelector('#account-days').textContent = daysLabel(days.length) + ' в дневнике';
+    const dates = recordedDates(days);
+    document.querySelector('#profile-first-day').textContent = dates.length ? dateLabel(dates[0]) : 'Пока нет';
+    document.querySelector('#profile-last-day').textContent = dates.length ? dateLabel(dates.at(-1)) : 'Пока нет';
+    document.querySelector('.profile-stats').hidden = false;
+  } catch {
+    if (profileUser?.id === user.id) document.querySelector('#account-days').textContent = 'Статистика пока недоступна.';
+  }
 }
 
 function drawIdentity(user) {
@@ -57,12 +70,8 @@ function drawIdentity(user) {
 }
 
 async function showProfileTools(user) {
-  const [provider, supported] = await Promise.all([account(), profileSupported()]);
-  if (provider.mode === 'local') {
-    localDiary.list().then(days => {
-      document.querySelector('#account-days').textContent = plural(days.length, 'день', 'дня', 'дней') + ' в дневнике';
-    }).catch(() => {});
-  }
+  const supported = await profileSupported();
+  showDiaryStats(user);
   if (!supported || profileUser !== user) return;
   document.querySelector('#profile-name').value = user.name || '';
   const options = [{id: '', label: 'Буква на цвете'}, ...avatarPresets];
@@ -142,7 +151,7 @@ form.onsubmit = async event => {
   message(register ? 'Создаём аккаунт…' : 'Входим…');
   try {
     const user = await login(document.querySelector('#email').value, password.value, register);
-    if (user) location.replace(goToJournal);
+    if (user) location.replace(goToHome);
     else {
       password.value = '';
       message('Проверьте почту и подтвердите адрес. Затем войдите в дневник.');

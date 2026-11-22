@@ -1,27 +1,30 @@
 import {hasDraft,listDays as listGuestDays} from './journal.mjs?v=2';
 import {dateLabel} from './ui.mjs';
 import {icon} from './icons.mjs';
-import {sessionUser} from './account-link.mjs';
+
 
 const guestJournal='/journal.html?mode=guest';
 
 // shelfSource picks the archive the visitor actually writes to: the account
 // once signed in, otherwise this browser's guest archive.
-async function shelfSource() {
-  if (await sessionUser()) {
+async function shelfSource(user) {
+  if (user) {
     try {
       const diary=await import('./diary.mjs');
       if (await diary.connectDiary()) return {
         journal:'/journal.html', title:'Ваш архив', place:'В вашем аккаунте',
         loading:'Открываем ваш архив…', failure:'Не удалось прочитать архив аккаунта.',
-        list:diary.listDays
+        list:diary.listDays, draft:()=>diary.getDraft('new')
       };
     } catch {}
+    return {journal:'/journal.html', title:'Ваш архив', place:'В вашем аккаунте',
+      loading:'Открываем ваш архив…', failure:'Не удалось прочитать архив аккаунта.',
+      list:async()=>{throw Error('Account unavailable');}, draft:async()=>false};
   }
   return {
     journal:guestJournal, title:'Гостевой архив', place:'В этом браузере',
     loading:'Открываем гостевой архив…', failure:'Не удалось прочитать записи браузера.',
-    list:listGuestDays
+    list:listGuestDays, draft:()=>hasDraft('new')
   };
 }
 
@@ -60,8 +63,8 @@ function dayCard(day,journal) {
   return row;
 }
 
-export async function mountHomeShelf(host) {
-  const source=await shelfSource();
+export async function mountHomeShelf(host, user = null) {
+  const source=await shelfSource(user);
   const {journal}=source;
   host.innerHTML=`<section class="home-shelf" aria-labelledby="home-shelf-title">
     <div class="home-shelf-head">
@@ -73,7 +76,7 @@ export async function mountHomeShelf(host) {
     <a class="home-shelf-next" href="${journal}#new" hidden></a>
   </section>`;
   const status=host.querySelector('.home-shelf-status');
-  const [entries,draft]=await Promise.allSettled([source.list(),hasDraft('new')]);
+  const [entries,draft]=await Promise.allSettled([source.list(),source.draft()]);
   if(!host.contains(status))return;
 
   const recent=(entries.value ?? [])
@@ -86,7 +89,7 @@ export async function mountHomeShelf(host) {
   }
   status.textContent=entries.status==='rejected' ? source.failure :
     recent.length ? '' : 'Здесь появится первый сохранённый день.';
-  if(draft.value || (entries.status==='fulfilled' && !recent.length)) {
+  if(draft.value || (!user && entries.status==='fulfilled' && !recent.length)) {
     const action=host.querySelector('.home-shelf-next');
     action.innerHTML=draft.value ? icon('book',18)+' Продолжить черновик' : icon('plus',18)+' Записать первый день';
     action.hidden=false;
