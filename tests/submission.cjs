@@ -5,6 +5,21 @@ const {chromium}=require('playwright');
 
 const base=process.env.TTL_TEST_URL || 'http://127.0.0.1:8080';
 
+function storedZipFiles(bytes){
+  const files=new Map();
+  for(let start=0;bytes.readUInt32LE(start)===0x04034b50;){
+    assert.equal(bytes.readUInt16LE(start+8),0,'ZIP entry must be stored');
+    const nameLength=bytes.readUInt16LE(start+26), extraLength=bytes.readUInt16LE(start+28);
+    const name=bytes.toString('utf8',start+30,start+30+nameLength);
+    const begin=start+30+nameLength+extraLength;
+    start=begin+bytes.readUInt32LE(start+18);
+    files.set(name.slice(name.indexOf('/')+1),bytes.subarray(begin,start));
+  }
+  assert.equal(bytes.readUInt32LE(bytes.length-22),0x06054b50);
+  assert.equal(bytes.readUInt16LE(bytes.length-12),files.size);
+  return files;
+}
+
 async function run(){
   const browser=await chromium.launch();
   try{
@@ -51,8 +66,12 @@ async function run(){
     await p.locator('[data-pace="late"]').click();
     assert.equal(await p.locator('[data-pace="late"]').getAttribute('aria-pressed'),'true');
     const chosenPause=Number(await p.locator('#quote-cue').inputValue());
-    await p.locator('#scene-montage').selectOption('');
-    await p.locator('#scene-montage').selectOption('1');
+    await p.locator('[data-montage="cover"]').click();
+    assert.equal(await p.locator('#recipe-detail').isHidden(),true);
+    await p.locator('[data-montage="quiet"]').click();
+    assert.equal(await p.locator('[data-montage="quiet"]').getAttribute('aria-pressed'),'true');
+    await p.locator('[data-montage="detail"]').click();
+    assert.match(await p.locator('#recipe-detail').innerText(),/Снимок 2/);
     const stage=p.locator('.stage');
     assert.equal(await stage.getAttribute('data-detail'),'');
     const second=await stage.locator('img').getAttribute('src');
@@ -74,22 +93,47 @@ async function run(){
     assert.equal(await stage.getAttribute('data-phase'),'1');
     await p.getByRole('button',{name:/^Послушать «/}).first().click();
     await p.locator('.day-management summary').click();
+    const sounds=await p.locator('.day-sounds [data-listen]').evaluateAll(elements=>
+      elements.map(({dataset})=>({id:dataset.listen,gain:Number(dataset.gain)})));
+    assert.ok(sounds.length);
     const [zip]=await Promise.all([p.waitForEvent('download'),p.locator('#export-folder').click()]);
     assert.match(zip.suggestedFilename(),/шорох-шин\.zip$/u);
-    const bytes=await fs.readFile(await zip.path());
-    assert.equal(bytes.readUInt32LE(0),0x04034b50);
-    assert.equal(bytes.readUInt32LE(bytes.length-22),0x06054b50);
-    assert.equal(bytes.readUInt16LE(bytes.length-12),5);
-    for(const name of ['photo-1.jpg','photo-2.jpg','song.wav','day.txt','day.json']){
-      assert.ok(bytes.includes(Buffer.from(name)),name);
-    }
+    const files=storedZipFiles(await fs.readFile(await zip.path()));
+    const soundPaths=sounds.map(({id})=>'ambience/'+id+'.mp3');
+    assert.deepEqual([...files.keys()].sort(),['photo-1.jpg','photo-2.jpg','song.wav','day.txt','day.json',...soundPaths].sort());
+    for(const name of soundPaths)assert.ok(files.get(name).length>0,name);
+    assert.match(files.get('day.txt').toString('utf8'),/встроенные звуки/);
+    const copy=JSON.parse(files.get('day.json'));
+    assert.deepEqual(copy.ambience,sounds);
+
+    const guest=await browser.newContext({baseURL:base,reducedMotion:'reduce'});
+    const restored=await guest.newPage();
+    restored.on('pageerror',error=>errors.push(error.message));
+    await restored.goto('/journal.html?mode=guest#archive');
+    await restored.locator('#day-file').setInputFiles({name:'day.json',mimeType:'application/json',buffer:files.get('day.json')});
+    await restored.waitForURL('**#day/*');
+    await restored.getByRole('heading',{name:'Шорох шин',exact:true}).waitFor();
+    await restored.getByRole('button',{name:/^За кадром/}).click();
+    await restored.locator('.stage[data-detail]').waitFor();
+    await restored.locator('.day-management summary').click();
+    const [recovered]=await Promise.all([restored.waitForEvent('download'),restored.locator('#export-day').click()]);
+    assert.deepEqual(JSON.parse(await fs.readFile(await recovered.path())),copy);
+
+    const missingSound='**/media/'+soundPaths[0];
+    await p.route(missingSound,route=>route.fulfill({status:404}));
+    const [partial]=await Promise.all([p.waitForEvent('download'),p.locator('#export-folder').click()]);
+    const partialFiles=storedZipFiles(await fs.readFile(await partial.path()));
+    assert.equal(partialFiles.has(soundPaths[0]),false);
+    assert.match(partialFiles.get('day.txt').toString('utf8'),/файл недоступен при скачивании/);
+    assert.deepEqual(JSON.parse(partialFiles.get('day.json')),copy);
+    await p.getByRole('status').filter({hasText:'Часть файлов звуков места недоступна'}).waitFor();
+    await p.unroute(missingSound);
 
     await p.locator('#share-day').click();
     await p.locator('.share-state').filter({hasText:'полный рассказ'}).waitFor();
     await p.locator('[data-create]').click();
     await p.locator('.share-url').waitFor();
     const url=await p.locator('.share-url').inputValue();
-    const guest=await browser.newContext();
     const shared=await guest.newPage();
     assert.equal((await shared.goto(url)).status(),200);
     await shared.getByRole('button',{name:/^За кадром/}).click();

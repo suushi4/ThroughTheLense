@@ -109,7 +109,6 @@ async function run() {
     assert.equal(await page.locator('#custom-quote').inputValue(),'мы гуляли');
     const quoteBeforeCompare=await page.locator('#chosen-quote').innerText();
     const coverBeforeCompare=await page.locator('.stage img').getAttribute('src');
-    await page.locator('.track-comparison summary').click();
     await page.locator('#compare-track').click();
     await page.getByRole('button',{name:'Вернуть «Два стаканчика»'}).waitFor();
     assert.equal(await page.locator('#quote-cue').inputValue(),'2.7');

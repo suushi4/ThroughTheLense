@@ -213,7 +213,7 @@ export function mountPlayer(host,entry,autoplay=false) {
     audio.play().catch(error=>{
       if(disposed || error.name==='AbortError')return;
       auditionEnd=null;
-      errorText.textContent='Музыка не запустилась. Нажмите «Воспроизвести» ещё раз или передвиньте ползунок для просмотра.';
+      errorText.textContent='Музыка не запустилась. Попробуйте ещё раз или выберите момент под кадром, чтобы посмотреть сцену без звука.';
     }).finally(()=>{
       loading=false;
       if(!disposed)display(position);
@@ -227,7 +227,7 @@ export function mountPlayer(host,entry,autoplay=false) {
   audio.onpause=()=>{if(!disposed)display(position);};
   audio.ontimeupdate=()=>{if(!audio.paused)update();};
   audio.onended=finish;
-  audio.onerror=()=>{if(!disposed)errorText.textContent='Не удалось воспроизвести звук. Сцену можно посмотреть с помощью ползунка.';};
+  audio.onerror=()=>{if(!disposed)errorText.textContent='Музыка недоступна. Выберите момент под кадром, чтобы посмотреть сцену без звука.';};
   play.onclick=()=>audio.paused?start():pause();
   $('.restart').onclick=()=>{seek(0);start();};
   function seek(value) {

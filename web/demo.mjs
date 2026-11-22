@@ -9,6 +9,7 @@ export const demos=examples.map(({key,photos,quote,palette,quoteAtSec,returnAtSe
  scene:{version:1,coverPhotoIndex:0,montage,ambience,quote,palette,quoteAtSec,returnAtSec,endAtSec:12}
 }));
 export async function exampleFile(path) {
-  const response=await fetch(path); if(!response.ok)throw Error('Не удалось загрузить материалы примера.');
+  const response=await fetch(path,{signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw Error('Не удалось загрузить материалы примера.');
   const blob=await response.blob(); return new File([blob],path.split('/').pop(),{type:blob.type});
 }

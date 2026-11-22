@@ -1,4 +1,5 @@
 import {exportDay} from './transfer.mjs';
+import {ambienceItem,sanitizeAmbience} from './ambience.mjs';
 
 const encoder=new TextEncoder();
 const crcTable=Uint32Array.from({length:256},(_,i)=>{
@@ -41,6 +42,17 @@ function archive(files){
   return new Blob([...local,...directory,end],{type:'application/zip'});
 }
 
+async function fetchSoundFile({file}){
+  try{
+    const response=await fetch('/media/ambience/'+file,{signal:AbortSignal.timeout(4000)});
+    if(!response.ok || !response.headers.get('content-type')?.startsWith('audio/'))return null;
+    const bytes=new Uint8Array(await response.arrayBuffer());
+    return bytes.length?bytes:null;
+  }catch{
+    return null;
+  }
+}
+
 export async function exportFolder(entry){
   const title=entry.title.toLowerCase().match(/[\p{L}\p{N}]+/gu)?.join('-').slice(0,60).replace(/-$/,'') || 'day';
   const folder=entry.dayDate+'-'+title;
@@ -50,12 +62,26 @@ export async function exportFolder(entry){
     return [`photo-${index+1}.${extension}`,file];
   });
   assets.push([/wav|wave/i.test(entry.audioFile.type) || /\.wave?$/i.test(entry.audioFile.name)?'song.wav':'song.mp3',entry.audioFile]);
-  assets.push(['day.json',await exportDay(entry)]);
+  const sounds=sanitizeAmbience(entry.scene.ambience).map(({id,gain})=>({...ambienceItem(id),gain}));
+  const [copy,...soundFiles]=await Promise.all([exportDay(entry),...sounds.map(fetchSoundFile)]);
+  assets.push(['day.json',copy]);
   const files=await Promise.all(assets.map(async ([name,blob])=>[folder+'/'+name,new Uint8Array(await blob.arrayBuffer())]));
   const {quote,coverPhotoIndex,quoteAtSec,returnAtSec,montage}=entry.scene;
-  const details=montage?.mode==='detail'?`\nДеталь — фото ${montage.detailIndex+1}.`:'';
+  const soundNotes=sounds.map(({title,file,gain},index)=>{
+    const path='ambience/'+file;
+    if(soundFiles[index])files.push([folder+'/'+path,soundFiles[index]]);
+    return `- ${title} · ${Math.round(gain*100)}% · ${soundFiles[index]?path:'файл недоступен при скачивании'}`;
+  });
+  const details=montage?.mode==='detail'?`\nДеталь — фото ${montage.detailIndex+1}.`:
+    montage?.mode==='quiet' && sounds.length?'\nЗвуки места затихают во время фразы.':'';
+  const ambience=sounds.length
+    ?'\n\nЗвуки места\n'+soundNotes.join('\n')+'\n\nПри открытии day.json дневник воспроизводит встроенные звуки с указанными настройками. Для воспроизведения нужна доступная библиотека сайта.'
+    :'';
   files.push([folder+'/day.txt',encoder.encode(
-    `${entry.title}\n${entry.dayDate}\n\n${entry.text}\n\nФраза — «${quote}»\nОбложка — фото ${coverPhotoIndex+1}.${details}\nПесня — ${entry.audioName}\nФраза — ${quoteAtSec} с. Возврат кадра — ${returnAtSec} с.\n\nЧтобы восстановить сцену, выберите day.json через «Открыть файл дня» в архиве ThroughTheLense.\n`
+    `${entry.title}\n${entry.dayDate}\n\n${entry.text}\n\nФраза — «${quote}»\nОбложка — фото ${coverPhotoIndex+1}.${details}\nПесня — ${entry.audioName}\nФраза — ${quoteAtSec} с. Возврат кадра — ${returnAtSec} с.${ambience}\n\nЧтобы восстановить сцену, распакуйте ZIP и выберите day.json через «Открыть файл дня» в архиве ThroughTheLense.\n`
   )]);
-  return {blob:archive(files),name:folder+'.zip'};
+  const warning=soundFiles.includes(null)
+    ?'Папка скачана. Часть файлов звуков места недоступна. Настройки записаны в day.json.'
+    :'';
+  return {blob:archive(files),name:folder+'.zip',warning};
 }

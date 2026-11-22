@@ -369,6 +369,7 @@ async function formPage(stamp,editing){
           <label class="sr-only" for="track-query">Поиск музыки из дневника</label>
           <input type="search" id="track-query" placeholder="Название или настроение" autocomplete="off">
           <p class="hint" id="track-hint" role="status"></p>
+          <p class="hint" id="track-load" role="status"></p>
           <div class="track-options" role="region" aria-label="Подборка треков" tabindex="0">${availableTracks.map(track=>`<button type="button" class="track-option" data-track="${track.id}" aria-pressed="false">${icon('music',15)}<span class="track-label"><span>${h(track.audioName)}</span><small>${h(track.mood)}</small><small class="track-fit" hidden>подходит к фото</small></span></button>`).join('')}</div>
           <p class="hint" id="track-empty" role="status"></p></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
@@ -651,12 +652,18 @@ async function formPage(stamp,editing){
     const item=availableTracks.find(x=>x.id===id);
     if(!item || id===d.trackId)return;
     const req=++audioRequest;
+    const loadStatus=$('#track-load');
+    loadStatus.textContent='Загружаем «'+item.audioName+'»…';
     changed();pending++;syncButton();
     try{
       const file=await exampleFile(item.audio);if(!current() || req!==audioRequest)return;
       d.audio=file;d.audioName=item.audioName;d.trackId=item.id;d.cues=null;changed();picks();errorText('song','');
-    }catch{if(current() && req===audioRequest){errorText('song','Не удалось загрузить композицию.');picks();}}
-    finally{pending--;syncButton();}
+    }catch{if(current() && req===audioRequest){errorText('song','Не удалось загрузить композицию. Выберите её ещё раз.');picks();}}
+    finally{
+      pending--;
+      if(current() && (req===audioRequest || pending===0))loadStatus.textContent='';
+      syncButton();
+    }
   };
   $('form').onsubmit=async e=>{
     e.preventDefault();if(formBusy || pending)return;
@@ -705,10 +712,33 @@ async function previewPage(stamp,editingId){
   }
   title('Предпросмотр');const {entry,quotes,thumbnail}=preview,view=displayDay(entry);
   const state=draft;
+  const detailPhotos=view.photos.map((src,index)=>({src,index})).filter(photo=>photo.index!==entry.scene.coverPhotoIndex);
+  const hasSounds=Boolean(entry.scene.ambience?.length);
+  const montages=[
+    ['cover','Один кадр','Фраза поверх обложки.'],
+    ['detail','Показать деталь',detailPhotos.length?'Второе фото появляется вместе с фразой.':'Добавьте второе фото в материалах.'],
+    ['quiet','Дать месту затихнуть',hasSounds?'Фон стихает на фразе. Песня продолжает играть.':'Добавьте звуки места в материалах.']
+  ];
   main.innerHTML=`<div class="page-heading"><a class="back" href="${h(materials)}">${icon('back',16)} К материалам</a><h1 id="preview-title">${h(entry.title)}</h1><p>${h(dateLabel(entry.dayDate))} · <span id="preview-track">${h(entry.audioName)}</span></p></div>
     <div class="preview-grid">
       <div class="preview-stage">
         <section class="player-box" aria-label="Сцена дня"></section>
+        <section class="scene-recipe" aria-labelledby="recipe-heading">
+          <h2 id="recipe-heading">Из чего собрана сцена</h2>
+          <blockquote class="quote-print" id="chosen-quote"></blockquote>
+          <dl class="scene-sources">
+            <div><dt>Обложка</dt><dd><img src="${h(view.photos[entry.scene.coverPhotoIndex])}" alt=""> Снимок ${entry.scene.coverPhotoIndex+1}</dd></div>
+            <div id="recipe-detail" hidden><dt>Деталь</dt><dd><img alt=""><span></span></dd></div>
+            <div><dt>Песня</dt><dd id="recipe-song"></dd></div>
+            <div><dt>Моменты</dt><dd id="recipe-cues"></dd></div>
+            <div><dt>Звуки места</dt><dd>${h(hasSounds?entry.scene.ambience.map(item=>ambienceItem(item.id).title).join(' · '):'Без фона')}</dd></div>
+          </dl>
+          <div class="recipe-actions">
+            <button class="btn secondary" type="button" id="compare-track"></button>
+            ${hasSounds?`<button class="btn secondary" type="button" id="compare-ambience" aria-pressed="true">Звуки места включены</button>`:''}
+            <p class="subtle" id="track-change" role="status"></p><p class="error" id="err-compare" role="alert"></p>
+          </div>
+        </section>
         <fieldset class="pace-picker"><legend>Пауза перед фразой</legend><div class="pace-options">
           ${[['early','Короче'],['music','По музыке'],['late','Дольше']].map(([id,label])=>`<button type="button" data-pace="${id}" aria-pressed="false">${label}<small></small></button>`).join('')}
         </div></fieldset>
@@ -720,20 +750,16 @@ async function previewPage(stamp,editingId){
       </div>
       <div class="preview-sidebar"><section class="editor"><h2>Оформление дня</h2>
         <div class="field"><label for="entry-title">Название дня</label><input id="entry-title" maxlength="120" aria-describedby="err-title"><p class="error" id="err-title" role="alert"></p></div>
-        <div class="field quote-field"><label for="choice">Фраза за кадром</label><blockquote class="quote-print" id="chosen-quote"></blockquote>
+        <div class="field quote-field"><label for="choice">Фраза за кадром</label>
           <select id="choice" aria-describedby="err-quote">${quotes.map((quote,index)=>`<option value="${index}">${h(quote)}</option>`).join('')}<option value="custom">Ввести свой фрагмент…</option></select>
           <div id="own-quote" hidden><label for="custom-quote">Дословный фрагмент записи</label><textarea id="custom-quote" rows="3" aria-describedby="err-quote"></textarea>
             </div><details class="quote-source"><summary>Фраза в исходной записи</summary><p id="quote-in-context"></p></details><p class="error" id="err-quote" role="alert"></p></div>
-        <dl class="scene-sources"><div><dt>Обложка дня</dt><dd><img src="${h(view.photos[entry.scene.coverPhotoIndex])}" alt="">Снимок ${entry.scene.coverPhotoIndex+1} из ${view.photos.length}</dd></div></dl>
-        <div class="field"><label for="scene-montage">Как показать день</label><select id="scene-montage">
-          <option value="">Один кадр</option>
-          ${view.photos.map((_,i)=>i===entry.scene.coverPhotoIndex?'':`<option value="${i}">Обложка → фото ${i+1} → обложка</option>`).join('')}
-          <option value="quiet">Шум → тишина</option>
-        </select><p class="subtle" id="montage-note"></p></div>
-        ${entry.scene.ambience?.length?`<div class="preview-sounds"><p class="subtle">${h(entry.scene.ambience.map(item=>ambienceItem(item.id).title).join(' · '))}</p><button class="btn secondary" type="button" id="compare-ambience" aria-pressed="true">Звуки места включены</button></div>`:''}
-        <details class="track-comparison"><summary>${icon('music',17)} Сравнить другую песню</summary><div class="track-comparison-body">
-          <button class="btn secondary" type="button" id="compare-track"></button><p class="subtle" id="track-change" role="status"></p><p class="error" id="err-compare" role="alert"></p>
-        </div></details>
+        <fieldset class="montage-picker"><legend>Как показать день</legend>
+          ${montages.map(([id,label,hint])=>`<button type="button" class="montage-option" data-montage="${id}" aria-pressed="false"${(id==='detail' && !detailPhotos.length || id==='quiet' && !hasSounds)?' disabled':''}><strong>${label}</strong><small>${hint}</small></button>`).join('')}
+        </fieldset>
+        <div class="field" id="montage-detail" hidden><label for="detail-photo">Второй снимок</label><select id="detail-photo">
+          ${detailPhotos.map(({index})=>`<option value="${index}">Снимок ${index+1}</option>`).join('')}
+        </select></div>
       </section>
       <div class="actions stage-actions preview-actions"><button class="btn primary" id="save">${icon('folder',17)} ${editingId?'Сохранить изменения':'Сохранить день'}</button>
         <span class="subtle" id="draft-status" role="status"></span><p class="error" id="err-save" role="alert"></p></div>
@@ -741,26 +767,32 @@ async function previewPage(stamp,editingId){
     </div>`;
   const playerHost=$('.player-box'), saveButton=$('#save'), compareButton=$('#compare-track');
   player=mountPlayer(playerHost,view);
-  const montage=$('#scene-montage'), compareAmbience=$('#compare-ambience');
-  const labels={
-    default:'Оттенок рамки взят из обложки. Фраза появляется поверх кадра.',
-    detail:'Второе фото появляется вместе с фразой. В конце возвращается обложка.',
-    quiet:'Фон стихает на фразе и возвращается тише в финале.'
-  };
+  const montageButtons=[...main.querySelectorAll('[data-montage]')], detailPhoto=$('#detail-photo');
+  const compareAmbience=$('#compare-ambience');
+  if(!hasSounds && entry.scene.montage?.mode==='quiet')player.setMontage(undefined);
   function drawMontage(){
     const value=entry.scene.montage;
-    montage.value=value?.mode==='quiet'?'quiet':String(value?.detailIndex ?? '');
-    $('#montage-note').textContent=labels[value?.mode ?? 'default'];
+    const detail=value?.mode==='detail', recipe=$('#recipe-detail');
+    for(const button of montageButtons)button.setAttribute('aria-pressed',String(button.dataset.montage===(value?.mode ?? 'cover')));
+    $('#montage-detail').hidden=!detail;
+    recipe.hidden=!detail;
+    if(detail){
+      detailPhoto.value=String(value.detailIndex);
+      recipe.querySelector('img').src=view.photos[value.detailIndex];
+      recipe.querySelector('span').textContent='Снимок '+(value.detailIndex+1);
+    }
   }
   drawMontage();
-  montage.onchange=()=>{
-    const value=montage.value;
-    state.montage=value==='quiet'?{mode:'quiet'}:value===''?undefined:{mode:'detail',detailIndex:Number(value)};
+  function chooseMontage(mode){
+    state.montage=mode==='quiet'?{mode}:mode==='detail'?{mode,detailIndex:Number(detailPhoto.value)}:undefined;
     player.setMontage(state.montage);
     player.seek(entry.scene.quoteAtSec);
     drawMontage();
+    if(mode==='quiet')applyAmbienceButton(true);
     persistDraft(state);
-  };
+  }
+  for(const button of montageButtons)button.onclick=()=>chooseMontage(button.dataset.montage);
+  detailPhoto.onchange=()=>chooseMontage('detail');
   let ambienceOn=true;
   function drawAmbienceButton(){
     if(!compareAmbience)return;
@@ -794,6 +826,8 @@ async function previewPage(stamp,editingId){
       input.setAttribute('aria-valuetext',seconds);
     }
     $('#cue-source').textContent='Фраза '+cueLabel(quoteAtSec)+' · кадр '+cueLabel(returnAtSec);
+    $('#recipe-song').textContent=entry.audioName;
+    $('#recipe-cues').textContent='Фраза '+cueLabel(quoteAtSec)+' · возврат '+cueLabel(returnAtSec);
     $('#cue-origin').textContent=state.cues?'Вручную':'По музыке';
     for(const button of paceButtons){
       const cues=pacedCues(preview.timing,button.dataset.pace);
@@ -921,7 +955,8 @@ async function previewPage(stamp,editingId){
     }
     if(!checkTitle()){titleField.focus();return;}if(!checkQuote()){custom.focus();return;}
     saving=true;saveButton.disabled=true;saveButton.setAttribute('aria-busy','true');errorText('save','');
-    for(const field of [titleField,choice,custom,compareButton,montage,...timingFields])field.disabled=true;
+    const fields=[titleField,choice,custom,compareButton,detailPhoto,...montageButtons,...timingFields].filter(field=>!field.disabled);
+    for(const field of fields)field.disabled=true;
     draftStatus('Сохраняем день…');
     try{
       await draftWrites;
@@ -933,7 +968,7 @@ async function previewPage(stamp,editingId){
         errorText('save',accountUser?'Не удалось сохранить день в аккаунте. Попробуйте снова.':'Не удалось сохранить день. Проверьте свободное место в браузере.');
         draftStatus('');
         saveButton.disabled=false;saveButton.removeAttribute('aria-busy');
-        for(const field of [titleField,choice,custom,compareButton,montage,...timingFields])field.disabled=false;
+        for(const field of fields)field.disabled=false;
         saveButton.focus();
       }
     }finally{saving=false;}
@@ -974,11 +1009,12 @@ function dayPage(entry,autoplay){
       button.onclick=async()=>{
         button.disabled=true;button.textContent='Готовим скачивание…';errorText('export','');
         try{
-          const {blob,name}=await create();
+          const {blob,name,warning}=await create();
           if(!button.isConnected)return;
           const url=URL.createObjectURL(blob), link=document.createElement('a');
           link.href=url;link.download=name;
           document.body.append(link);link.click();link.remove();
+          if(warning)toast(warning);
           setTimeout(()=>URL.revokeObjectURL(url),60000);
         }catch{
           if(button.isConnected)errorText('export','Не удалось скачать день. Попробуйте ещё раз.');
