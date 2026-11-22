@@ -1,7 +1,7 @@
 name: Verify diary gallery on Go
 on:
-  push:
-    branches: [verify-diary-gallery-go]
+  pull_request:
+    branches: [diary-gallery-calendar]
 permissions:
   contents: read
 jobs:
