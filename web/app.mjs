@@ -1,4 +1,5 @@
 import {icon} from './icons.mjs';
+import {renderArchiveCalendar,shiftMonth} from './archive-calendar.mjs';
 import {escapeHTML as h,dateLabel,timeLabel} from './ui.mjs';
 import {composeText,words,analyzePhotos,analyzeAudio,checkPhotos,checkAudio,validCues,pacedCues,coverWarmth,sceneMontage} from './scene.mjs';
 import {connectDiary,getDay,listDays,saveDay,getDraft,saveDraft,removeDay} from './diary.mjs';
@@ -21,6 +22,7 @@ let turn=0, urls=[], player=null, draft=null, preview=null, filter=null, archive
 let draftWrites=Promise.resolve();
 let accountUser=null, shareable=false;
 let archiveReturn=null;
+let archiveView='list', calendarMonth='', calendarDate='';
 const pendingDrafts=new Map();
 const back='<a class="back" href="#archive">'+icon('back',16)+' К архиву</a>';
 function localDate(){
@@ -187,9 +189,14 @@ async function archive(stamp) {
         <div class="search-field"><label for="archive-query" class="sr-only">Поиск по архиву</label><div class="archive-search">${icon('search',18)}<input id="archive-query" type="search" aria-label="Поиск по названию, песне или дате" placeholder="Название, песня или дата" autocomplete="off"><button type="button" id="clear-query" aria-label="Очистить поиск" hidden>${icon('close',16)}</button></div></div>
         <div class="filters" role="group" aria-label="Какие дни показать">${[['all','Все дни'],['mine','Мои дни'],['demo','Примеры']].map(([key,label])=>'<button class="chip" type="button" data-filter="'+key+'">'+label+'</button>').join('')}</div>
       </div>
+      <div class="archive-view" role="group" aria-label="Вид архива">
+        <button class="chip" type="button" data-archive-view="list">Список</button>
+        <button class="chip" type="button" data-archive-view="calendar">Календарь</button>
+      </div>
       <div class="collection-head"><span id="day-count" class="count" role="status"></span>
         <div class="collection-actions"><button class="btn secondary" type="button" id="random-day">${icon('shuffle',16)} Случайный день</button>
         <button class="btn secondary" type="button" id="import-day">${icon('folder',16)} Открыть файл дня</button></div></div>
+      <details class="collection-help"><summary>Как открыть копию дня?</summary><p>В записи выберите «Действия» → «Скачать копию». В архиве нажмите «Открыть файл дня» и выберите файл JSON.</p></details>
       <input type="file" id="day-file" accept=".json,application/json" aria-label="Файл копии дня" hidden>
       <p id="err-import" class="error" role="alert"></p>
       <div class="archive-results">
@@ -260,7 +267,10 @@ async function archive(stamp) {
   function draw(featuredHref){
     visible=matchingDays(days,filter,archiveQuery);
     $('#spread-status').textContent='';
-    $('.spread').hidden=!visible.length;
+    const calendar=archiveView==='calendar';
+    $('.archive-results').classList.toggle('calendar-view',calendar);
+    main.querySelectorAll('[data-archive-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.archiveView===archiveView)));
+    $('.spread').hidden=calendar||!visible.length;
     $('.spread-nav').hidden=visible.length<2;
     $('#random-day').hidden=visible.length<2;
     if(visible.length)showFeature(Math.max(0,visible.findIndex(day=>'#day/'+encodeURIComponent(day.id)===featuredHref)));
@@ -270,7 +280,11 @@ async function archive(stamp) {
     $('#clear-query').hidden=!archiveQuery;
     main.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)));
     let content;
-    if(visible.length){
+    if(calendar){
+      calendarMonth ||= visible[0]?.dayDate.slice(0,7) || localDate().slice(0,7);
+      content=renderArchiveCalendar(visible,calendarMonth,calendarDate,card);
+    }
+    else if(visible.length){
       const months=Map.groupBy(visible,day=>day.dayDate.slice(0,7));
       const format=new Intl.DateTimeFormat('ru',{month:'long',year:'numeric',timeZone:'UTC'});
       content=[...months].map(([month,items])=>`<section class="archive-month"><h3>${h(format.format(new Date(month+'-01')))}</h3><div class="grid">${items.map(card).join('')}</div></section>`).join('');
@@ -280,13 +294,26 @@ async function archive(stamp) {
     else content='<div class="empty">'+icon('folder',29)+'<h3>Ваш первый день</h3><p>Добавьте снимок, музыку и пару строк о том, что запомнилось.</p><a class="btn primary" id="start-first-day" href="#new">Записать день</a></div>';
     $('#folders').innerHTML=(unavailable?'<p class="error" role="alert">Личный архив сейчас недоступен. Вы можете посмотреть три примера.</p>':'')+content;
     if($('#reset-search'))$('#reset-search').onclick=clearQuery;
+    main.querySelectorAll('[data-month-step]').forEach(button=>button.onclick=()=>{
+      const step=button.dataset.monthStep;
+      calendarMonth=shiftMonth(calendarMonth,Number(step));
+      calendarDate='';
+      draw();
+      $('[data-month-step="'+step+'"]').focus();
+    });
+    main.querySelectorAll('[data-calendar-date]').forEach(button=>button.onclick=()=>{
+      calendarDate=button.dataset.calendarDate;
+      draw();
+      $('[data-calendar-date="'+calendarDate+'"]').focus();
+    });
   }
   const input=$('#archive-query');
-  function clearQuery(){archiveQuery=input.value='';draw();input.focus();}
+  function clearQuery(){archiveQuery=input.value='';calendarMonth=calendarDate='';draw();input.focus();}
   input.value=archiveQuery;
-  input.oninput=()=>{archiveQuery=input.value;draw();};
+  input.oninput=()=>{archiveQuery=input.value;calendarMonth=calendarDate='';draw();};
   $('#clear-query').onclick=clearQuery;
-  main.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;draw();});
+  main.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;calendarMonth=calendarDate='';draw();});
+  main.querySelectorAll('[data-archive-view]').forEach(button=>button.onclick=()=>{archiveView=button.dataset.archiveView;draw();});
   draw(archiveReturn?.featured);
 }
 async function formPage(stamp,editing){
@@ -325,7 +352,7 @@ async function formPage(stamp,editing){
         <p class="proof-song">${icon('music',16)}<span id="proof-song"></span></p>
       </aside>
       <section class="form-step" aria-labelledby="step-song">${step('song','3','Песня дня')}
-        <div class="field"><label class="sr-only" for="song">Выбрать песню</label><span class="hint" id="song-hint">MP3 или WAV. Из длинной песни можно вырезать фрагмент прямо здесь.</span>
+        <div class="field"><label class="sr-only" for="song">Выбрать песню</label><span class="hint" id="song-hint">MP3 или WAV до 32 МиБ. Из длинной песни можно вырезать фрагмент от 3 до 60 секунд.</span>
           <div class="drop">${icon('music')} Выбрать песню<input type="file" id="song" accept=".mp3,.wav,.wave,audio/mpeg,audio/wav" aria-describedby="song-hint err-song"></div>
           <div class="attachments" id="audio-list"></div><audio id="song-audition" controls preload="metadata" aria-label="Послушать выбранную песню" hidden></audio>
           <details id="song-trim" class="timing-editor" hidden><summary>Выбрать фрагмент песни</summary><div class="trim-controls">
@@ -338,6 +365,7 @@ async function formPage(stamp,editing){
           <div class="track-options">${demos.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
+          <details class="collection-help"><summary>Как подбираются звуки?</summary><p>Когда доступен подбор по фото, проверяется обложка. В остальных случаях учитываются слова записи. Любой звук можно убрать или заменить вручную. <a href="/privacy.html#ambience">Как используется фото</a></p></details>
           <div class="ambience-chips" id="ambience-chips"></div>
           ${sampleOutput}
           <div class="ambience-tools"><label class="sr-only" for="ambience-add">Добавить звук места</label><select id="ambience-add"></select>

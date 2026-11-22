@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Посмотрите три короткие сцены ThroughTheLense и попробуйте собрать свою из материалов примера.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Примеры сцен · ThroughTheLense">
+  <meta property="og:description" content="Три дня, в которых фотография, фраза и песня складываются в короткую сцену.">
+  <meta property="og:image" content="/media/social-preview.jpg">
+  <title>Примеры сцен · ThroughTheLense</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css?v=7">
+  <link rel="stylesheet" href="/player.css">
+  <link rel="stylesheet" href="/diary-extras.css">
+  <script type="module" src="/gallery.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#main">К содержанию</a>
+  <main id="main" class="wrap gallery" tabindex="-1">
+    <a class="back" href="/">На главную</a>
+    <h1>Примеры сцен</h1>
+    <p>Выберите день и посмотрите, как фотография, фраза и песня складываются в воспоминание.</p>
+    <div id="gallery-cards" class="gallery-cards" role="group" aria-label="Выбрать пример"></div>
+    <section aria-labelledby="gallery-scene-title">
+      <h2 id="gallery-scene-title" aria-live="polite"></h2>
+      <div id="gallery-stage" class="player-box"></div>
+      <a class="btn primary" id="gallery-editor" href="/journal.html?example=demo-street#new">Попробовать с этими материалами</a>
+    </section>
+    <noscript><p><a href="/journal.html#archive">Открыть примеры в архиве</a></p></noscript>
+    <footer class="gallery-footer"><a href="/journal.html#archive">Архив</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+.gallery {max-width: 960px; padding-block: 2rem 3rem; display: grid; gap: 1rem}
+.gallery h1, .gallery h2, .gallery p {margin: 0; overflow-wrap: anywhere}
+.gallery section {display: grid; gap: 1rem; min-width: 0}
+.gallery section > a {justify-self: start; max-width: 100%; text-align: center}
+.gallery-cards {display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .75rem}
+.gallery-card {display: grid; align-content: start; gap: .35rem; min-width: 0; padding: .6rem; text-align: left; font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: .75rem; cursor: pointer}
+.gallery-card[aria-pressed="true"] {outline: 2px solid currentColor; outline-offset: 2px}
+.gallery-card img {display: block; width: 100%; height: auto; aspect-ratio: 2/1; object-fit: cover; border-radius: .35rem}
+.gallery-card span, .gallery-card strong {overflow-wrap: anywhere}
+.gallery-footer, .archive-view {display: flex; flex-wrap: wrap; gap: .6rem 1rem}
+.archive-view {margin: .65rem 0}
+.calendar-controls, .calendar-grid {display: grid; gap: .25rem; align-items: center}
+.calendar-controls {grid-template-columns: auto minmax(0,1fr) auto; text-align: center; margin-bottom: .5rem}
+.calendar-controls h3 {margin: 0; overflow-wrap: anywhere}
+.calendar-grid {grid-template-columns: repeat(7,minmax(0,1fr)); text-align: center}
+.calendar-grid > * {min-width: 0}
+.calendar-weekday, .calendar-empty, .calendar-date {padding: .35rem 0}
+.calendar-date {min-height: 44px; border: 1px solid currentColor; border-radius: .5rem; background: transparent; color: inherit; font: inherit; cursor: pointer}
+.calendar-date[aria-pressed="true"] {outline: 2px solid currentColor; outline-offset: -3px}
+.calendar-dot {display: block; width: .3rem; height: .3rem; margin: .2rem auto 0; border-radius: 50%; background: currentColor}
+.collection-help {margin: .25rem 0 .75rem}
+.privacy-tools {margin-block: 1.25rem}
+.privacy-tools li {margin-block: .4rem}
+@media (max-width: 560px) {.gallery-cards {grid-template-columns: 1fr} .gallery-card {grid-template-columns: minmax(0,4.5rem) minmax(0,1fr); align-items: center} .gallery-card img {grid-row: span 2; aspect-ratio: 3/2}}
+
+.archive-results.calendar-view {grid-template-columns: minmax(0,1fr)}
