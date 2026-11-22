@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/diary-extras.css">
   <link rel="stylesheet" href="/consent.css">
   <script type="module" src="/consent.mjs"></script>
+  <script type="module" src="/account-link.mjs"></script>
   <meta name="robots" content="noindex">
   <title>ThroughTheLense — Архив дней</title>
 </head>
@@ -30,7 +31,7 @@
   <main class="wrap" id="main" tabindex="-1">
     <p class="loading-state" role="status">Открываем дневник…</p>
   </main>
-  <footer class="wrap foot"><span>ThroughTheLense</span><small id="storage-note">Гостевые дни хранятся в этом браузере</small><nav aria-label="Ссылки в подвале"><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a><button type="button" data-consent-settings hidden>Настройки аналитики</button></nav></footer>
+  <footer class="wrap foot"><span>ThroughTheLense</span><small id="storage-note">Гостевые дни хранятся в этом браузере</small><nav aria-label="Ссылки в подвале"><a href="/cabinet.html" data-cabinet-link hidden>Кабинет</a><a href="/help.html">Помощь</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a><button type="button" data-consent-settings hidden>Настройки аналитики</button></nav></footer>
   <div id="status" class="toast" role="status"></div>
   <dialog id="dialog"><div id="dialog-body"></div><button class="round close-dialog" id="dialog-close" type="button" aria-label="Закрыть">×</button></dialog>
   <noscript>Для фотодневника включите JavaScript в настройках браузера.</noscript>

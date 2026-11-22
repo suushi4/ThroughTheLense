@@ -32,6 +32,10 @@
           <label for="password">Пароль</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required maxlength="128">
           <p id="password-hint" class="account-hint" hidden>Не менее 8 символов</p>
+          <div id="registration-terms" hidden>
+            <p class="account-hint"><a href="/terms.html" target="_blank" rel="noopener">Условия использования</a> и <a href="/privacy.html" target="_blank" rel="noopener">политика конфиденциальности</a></p>
+            <label class="terms-choice"><input type="checkbox" id="accept-terms"> Принимаю условия использования</label>
+          </div>
           <button class="action solid" id="auth-submit" type="submit">Войти</button>
           <button class="auth-switch" type="button" id="auth-mode">Создать аккаунт</button>
         </form>
@@ -41,8 +45,17 @@
             <div><dt>Первый день</dt><dd id="profile-first-day"></dd></div>
             <div><dt>Последняя запись</dt><dd id="profile-last-day"></dd></div>
           </dl>
-          <a class="action solid" href="/journal.html#archive">Мой архив</a>
-          <a class="action" href="/">Личная главная</a>
+          <a class="action solid" href="/cabinet.html">Открыть кабинет</a>
+          <a class="action" href="/journal.html#archive">Мой архив</a>
+          <section class="account-agreements" aria-labelledby="account-agreements-title" id="account-agreements">
+            <h2 id="account-agreements-title">Соглашения и cookies</h2>
+            <ul><li><a href="/terms.html">Условия использования</a></li>
+              <li><a href="/privacy.html">Политика конфиденциальности</a></li>
+              <li><a href="/privacy.html#cookies">Cookies и локальное хранилище</a></li></ul>
+            <p>Служебные данные нужны для входа. Аналитику посещений можно разрешить или отклонить.</p>
+            <div class="consent-actions"><button type="button" data-choice="no">Отклонить аналитику</button><button type="button" data-choice="yes">Разрешить аналитику</button></div>
+            <p class="consent-status" role="status"></p>
+          </section>
           <form id="profile-form" class="profile-form" hidden>
             <label for="profile-name">Имя в дневнике</label>
             <input id="profile-name" name="name" maxlength="40" autocomplete="nickname" placeholder="Как вас называть">
@@ -63,7 +76,7 @@
             <ul><li><a href="/privacy.html#storage">Где хранятся записи и черновики</a></li>
             <li><a href="/privacy.html#copies">Как скачать копию или удалить запись</a></li>
             <li><a href="/privacy.html#sharing">Как отозвать публичную ссылку</a></li>
-            <li><a href="/privacy.html#analytics">Настройки аналитики</a></li>
+            <li><a href="#account-agreements">Настройки аналитики</a></li>
             <li><a href="/privacy.html#account-deletion">Запрос на удаление аккаунта</a></li></ul>
           </details>
           <button class="auth-switch" id="sign-out" type="button">Выйти из аккаунта</button>
@@ -73,7 +86,7 @@
         <a class="guest-link" href="/journal.html#archive" hidden>Продолжить без аккаунта</a>
       </section>
       <footer class="account-links">
-        <nav aria-label="Ссылки в подвале"><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></nav>
+        <nav aria-label="Ссылки в подвале"><a href="/help.html">Помощь</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a></nav>
       </footer>
     </div>
   </main>

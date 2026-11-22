@@ -24,3 +24,7 @@
 @media (max-width: 560px) {.gallery-cards {grid-template-columns: 1fr} .gallery-card {grid-template-columns: minmax(0,4.5rem) minmax(0,1fr); align-items: center} .gallery-card img {grid-row: span 2; aspect-ratio: 3/2}}
 
 .archive-results.calendar-view {grid-template-columns: minmax(0,1fr)}
+#place-sounds { margin-block: 1.25rem; }
+#place-sounds .ambience-chips { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 12rem),1fr)); gap: .65rem; }
+#place-sounds .sound-sample { justify-content: start; border: 1px solid var(--line-strong); background: var(--sheet); }
+#place-sounds .sound-sample[aria-pressed="true"] { background: var(--accent); color: var(--sheet); }

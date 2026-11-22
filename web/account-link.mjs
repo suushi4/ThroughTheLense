@@ -13,9 +13,11 @@ export function sessionUser() {
 
 export async function markAccountLinks(root = document) {
   const links = root.querySelectorAll('[data-account-link]');
-  if (!links.length) return;
+  const cabinetLinks = root.querySelectorAll('[data-cabinet-link]');
+  if (!links.length && !cabinetLinks.length) return;
   const user = await sessionUser();
   if (!user) return;
+  for (const link of cabinetLinks) link.hidden = false;
   for (const link of links) {
     // Avatar and name; on phones only the avatar, so the header fits.
     const name = displayName(user);

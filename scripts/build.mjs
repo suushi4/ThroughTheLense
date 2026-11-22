@@ -2,7 +2,7 @@ import {cp, mkdir, copyFile, readFile, rm, writeFile} from 'node:fs/promises';
 import {basename} from 'node:path';
 import {buildSceneEffects} from './build-visuals.mjs';
 
-const publicPages = ['/', '/gallery.html', '/privacy.html', '/terms.html'];
+const publicPages = ['/', '/gallery.html', '/help.html', '/sounds.html', '/privacy.html', '/terms.html'];
 const configuredOrigin = process.env.SITE_ORIGIN ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL && 'https://' + process.env.VERCEL_PROJECT_PRODUCTION_URL);
 const normalized = configuredOrigin && new URL(configuredOrigin);

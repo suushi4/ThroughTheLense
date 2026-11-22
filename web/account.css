@@ -1,3 +1,11 @@
+.account-agreements { border: 1px solid var(--line-strong); border-radius: 14px; padding: 1rem; margin-block: 1.25rem; overflow-wrap: anywhere; }
+.account-agreements h2 { font-size: 1.25rem; }
+.account-agreements ul { padding-inline-start: 1.2rem; }
+.account-agreements a, #registration-terms a { text-decoration: underline; text-underline-offset: 3px; }
+.account-agreements .consent-actions { margin-block: .65rem; flex-wrap: wrap; }
+.account-agreements .consent-actions button[aria-pressed="true"] { outline: 2px solid currentColor; outline-offset: 2px; }
+#credentials .terms-choice { display: flex; align-items: start; gap: .55rem; }
+#credentials #accept-terms { width: 1.15rem; height: 1.15rem; margin: .16rem 0 0; flex: none; }
 .account-page { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1.08fr) minmax(400px,1fr); background: var(--paper); }
 .account-image { background: var(--album) url("/media/account-cover.webp") 65% center / cover no-repeat; }
 .account-panel { display: grid; align-content: space-between; justify-items: start; padding: clamp(24px,5vw,76px); gap: 36px; min-width: 0; border-left: 1px solid var(--line-strong); }

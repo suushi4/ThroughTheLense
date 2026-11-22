@@ -16,7 +16,7 @@ const submit = document.querySelector('#auth-submit');
 const profile = document.querySelector('#signed-in');
 const signOut = document.querySelector('#sign-out');
 const drawerLink = document.querySelector('.guest-link');
-const goToHome = '/';
+const terms = document.querySelector('#accept-terms');
 let register = false;
 
 function message(text, error = false) {
@@ -33,6 +33,11 @@ function renderForm() {
   password.autocomplete = register ? 'new-password' : 'current-password';
   password.minLength = register ? 8 : 1;
   passwordHint.hidden = !register;
+  document.querySelector('#registration-terms').hidden = !register;
+  terms.required = register;
+  terms.checked = false;
+  document.querySelector('.profile-stats').hidden = true;
+  document.querySelector('#account-days').textContent = '';
   if (register) password.setAttribute('aria-describedby', passwordHint.id);
   else password.removeAttribute('aria-describedby');
   form.hidden = false;
@@ -151,8 +156,11 @@ form.onsubmit = async event => {
   message(register ? 'Создаём аккаунт…' : 'Входим…');
   try {
     const user = await login(document.querySelector('#email').value, password.value, register);
-    if (user) location.replace(goToHome);
-    else {
+    if (user) {
+      password.value = '';
+      renderProfile(user);
+      heading.focus();
+    } else {
       password.value = '';
       message('Проверьте почту и подтвердите адрес. Затем войдите в дневник.');
     }

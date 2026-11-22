@@ -50,14 +50,23 @@ for (const button of document.querySelectorAll('[data-consent-settings]')) {
     banner.querySelector('button').focus();
   });
 }
-for (const button of banner.querySelectorAll('[data-choice]')) {
+const inlineChoices = [...document.querySelectorAll('#account-agreements [data-choice]')];
+function showPreference() {
+  for (const button of inlineChoices) {
+    button.setAttribute('aria-pressed', String(preference === button.dataset.choice));
+  }
+  const status = document.querySelector('.consent-status');
+  if (status) status.textContent = preference === 'yes' ? 'Аналитика разрешена.' :
+    preference === 'no' ? 'Аналитика отклонена.' : 'Аналитика выключена, пока вы не разрешите её.';
+}
+showPreference();
+for (const button of [...banner.querySelectorAll('[data-choice]'), ...inlineChoices]) {
   button.addEventListener('click', () => {
     const hadFocus = banner.contains(document.activeElement);
     preference = button.dataset.choice;
     try { localStorage.setItem(preferenceKey, preference); } catch {}
     banner.hidden = true;
-    const status = document.querySelector('.consent-status');
-    if (status) status.textContent = preference === 'yes' ? 'Аналитика разрешена.' : 'Аналитика отклонена.';
+    showPreference();
     if (hadFocus) (trigger || document.querySelector('main a, main button'))?.focus({preventScroll:true});
     countVisit();
   });
@@ -68,5 +77,6 @@ addEventListener('storage', event => {
   if (event.key !== preferenceKey && event.key !== null) return;
   preference = event.newValue;
   if (preference) banner.hidden = true;
+  showPreference();
 });
 countVisit();

@@ -44,9 +44,16 @@ async function run() {
     await page.getByLabel('Электронная почта').fill(email);
     await page.getByLabel('Пароль').fill(password);
     await page.getByRole('button', {name: 'Создать аккаунт', exact: true}).click();
-    await page.waitForURL(url => url.pathname === '/' && !url.hash);
+    assert.equal(await page.locator('#accept-terms').evaluate(box => box.validity.valueMissing), true);
+    assert.equal((await (await page.request.get('/api/session')).json()).user, null);
+    await page.getByLabel('Принимаю условия использования').check();
+    await page.getByRole('button', {name: 'Создать аккаунт', exact: true}).click();
+    await page.locator('#account-agreements').waitFor();
+    assert.equal(new URL(page.url()).pathname, '/account.html');
+    await page.getByRole('button', {name:'Отклонить аналитику'}).click();
+    assert.equal(await page.getByRole('button', {name:'Отклонить аналитику'}).getAttribute('aria-pressed'), 'true');
+    await page.getByRole('link', {name:'Открыть кабинет'}).click();
     await page.locator('#personal-home:not([hidden])').waitFor();
-    assert.equal(await page.locator('#visitor-home').isVisible(), false);
     await page.goto('/journal.html#archive');
     await page.getByRole('heading',{name:'Ваш первый день'}).waitFor();
     assert.equal(await page.locator('.day-card, [data-filter="demo"]:visible').count(), 0);
@@ -100,6 +107,7 @@ async function run() {
 
     // Home shelf shows the account archive and links into it.
     await page.goto('/');
+    await page.getByRole('link', {name:'Кабинет', exact:true}).click();
     await page.locator('#personal-home:not([hidden])').waitFor();
     await page.getByRole('heading', {name: 'Ваш архив'}).waitFor();
     const shelfDay = page.locator('.home-shelf-day').filter({hasText: 'День для полки'});
@@ -118,6 +126,12 @@ async function run() {
       assert.equal(await narrow.locator('[data-account-link] .avatar').isVisible(), true);
       assert.equal(await narrow.locator('[data-account-link] .label-wide').isVisible(), false);
       assert.equal(await narrow.locator('[data-account-link]').getAttribute('aria-label'), 'Аккаунт');
+      assert.equal(await narrow.evaluate(() => document.documentElement.scrollWidth), width);
+      await narrow.goto('/cabinet.html');
+      await narrow.locator('#personal-home:not([hidden])').waitFor();
+      assert.equal(await narrow.evaluate(() => document.documentElement.scrollWidth), width);
+      await narrow.goto('/account.html');
+      await narrow.locator('#account-agreements').waitFor();
       assert.equal(await narrow.evaluate(() => document.documentElement.scrollWidth), width);
       await phone.close();
     }

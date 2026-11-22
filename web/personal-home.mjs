@@ -1,15 +1,20 @@
 import {displayName} from './avatar.mjs';
 import {mountHomeShelf} from './home-shelf.mjs';
+import {sessionUser} from './account-link.mjs';
 
-export function showPersonalHome(user) {
-  document.querySelector('#visitor-home').hidden = true;
-  for (const link of document.querySelectorAll('.home-mast .story-link')) link.hidden = true;
+const user = await sessionUser();
+document.querySelector('#cabinet-loading').hidden = true;
+if (user) {
   const home = document.querySelector('#personal-home');
   const name = displayName(user);
-  if (name) home.querySelector('h1').textContent = name + ', ваш дневник';
+  const greeting = document.querySelector('#cabinet-greeting');
+  if (name) {
+    greeting.textContent = 'Ваш дневник, ' + name;
+    greeting.hidden = false;
+  }
   home.hidden = false;
-  document.title = 'Мой дневник · ThroughTheLense';
-  const update = () => mountHomeShelf(home.querySelector('#personal-shelf'), user);
-  update();
-  addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
+  mountHomeShelf(document.querySelector('#personal-shelf'), user);
+} else {
+  document.querySelector('#cabinet-guest').hidden = false;
 }
+addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
