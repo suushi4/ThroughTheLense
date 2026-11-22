@@ -68,6 +68,13 @@ img { display: block; max-width: 100%; }
 .print-title { font: 700 clamp(14px, 1.3vw, 19px)/1.35 var(--display); }
 .contact-print time { color: var(--on-dark); font-size: 13px; font-variant-numeric: tabular-nums; }
 .memory-dock { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border-top: 1px solid var(--line-strong); padding-top: 12px; }
+/* Reserve the actual tray layout until its controls are wired up. */
+@media (scripting: enabled) {
+  .memory-dock[hidden] { display: grid !important; visibility: hidden; }
+}
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .memory-dock[hidden] .motion-toggle { display: grid !important; }
+}
 .memory-tray { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .memory-choice {
   display: flex;

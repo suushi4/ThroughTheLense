@@ -1,5 +1,13 @@
-.home-shelf {
+#home-shelf {
   --shelf-pad: clamp(14px,4vw,28px);
+  --empty-shelf-height: 10rem;
+  min-block-size: calc(var(--empty-shelf-height) + 2 * var(--shelf-pad));
+}
+@media (max-width: 359px) {
+  #home-shelf { --empty-shelf-height: 14rem; }
+}
+#home-shelf > .feature-loading, .home-shelf { min-block-size: inherit; }
+.home-shelf {
   container-type: inline-size;
   min-width: 0;
   display: grid;

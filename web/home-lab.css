@@ -1,3 +1,9 @@
+#home-lab {
+  /* Reserve the player, track controls and photo before the module arrives. */
+  --lab-height: min(40rem, calc(11.25rem + 32vw));
+  min-block-size: var(--lab-height);
+}
+#home-lab .feature-loading { min-block-size: var(--lab-height); }
 .home-lab {
   --focus: var(--accent);
   display: grid;
@@ -42,7 +48,11 @@
 .lab-screen .afterquote { display: none; }
 .lab-screen .chapters { gap: 6px; }
 @media (max-width: 760px) {
+  #home-lab { --lab-height: calc(31rem + 56vw); }
   .home-lab { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 480px) {
+  #home-lab { --lab-height: calc(34rem + 56vw); }
 }
 @media (max-width: 520px) {
   .lab-screen .chapters button { display: block; }

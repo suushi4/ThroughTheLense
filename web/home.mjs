@@ -16,7 +16,7 @@ function nearViewport(host, load, fallbackHref, fallbackText) {
       note.append(link);
       host.replaceChildren(note);
     });
-  }, {rootMargin: '240px'});
+  }, {rootMargin: `${Math.min(1400,Math.max(640,window.innerHeight * 1.5))}px 0px`});
   observer.observe(host);
 }
 
