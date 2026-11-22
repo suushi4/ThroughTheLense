@@ -1,9 +1,17 @@
+.live-example { --chapter-paper: #e3ead0; }
+.story-chapter { --chapter-paper: #f3e3d5; }
+.music-chapter { --chapter-paper: #dfe9dd; }
+.final-chapter { --chapter-paper: #efd5b6; }
+.live-example, .story-chapter, .music-chapter, .final-chapter {
+  background: linear-gradient(to bottom, var(--paper), var(--chapter-paper) 24%, var(--chapter-paper) 76%, var(--paper));
+}
+
 .chapter-band {
   position: sticky;
   top: 0;
   z-index: 3;
   color: var(--ink);
-  background: var(--home-paper, var(--paper));
+  background: var(--paper);
   border-block: 1px solid var(--line-strong);
 }
 .chapter-index {

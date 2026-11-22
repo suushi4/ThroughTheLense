@@ -10,11 +10,13 @@ export function mountAtmosphere(opening, motion) {
   if (!context) return () => {};
 
   const art = canvas.parentElement;
+  const print = art.querySelector('.print-window');
   const toggle = opening.querySelector('.motion-toggle');
   const hover = matchMedia('(hover: hover) and (pointer: fine)');
   let mood = moods.street;
   let paused = false, visible = true, frame = 0, previousTime = 0;
   let targetX = 0.72, targetY = 0.5, lightX = targetX, lightY = targetY;
+  let offsetX = 0, offsetY = 0;
   let particles = [];
 
   function populate() {
@@ -43,8 +45,13 @@ export function mountAtmosphere(opening, motion) {
     lightX += (targetX - lightX) * 0.18;
     lightY += (targetY - lightY) * 0.18;
     const clock = time / 1000;
-    art.style.setProperty('--hero-dx', ((lightX - 0.72) * 14).toFixed(2) + 'px');
-    art.style.setProperty('--hero-dy', ((lightY - 0.5) * 10).toFixed(2) + 'px');
+    const dx = Math.round((lightX - 0.72) * 140) / 10;
+    const dy = Math.round((lightY - 0.5) * 100) / 10;
+    if (dx !== offsetX || dy !== offsetY) {
+      print.style.transform = dx || dy ? `translate3d(${dx}px, ${dy}px, 0)` : '';
+      offsetX = dx;
+      offsetY = dy;
+    }
     context.clearRect(0, 0, width, height);
 
     const gx = (lightX + 0.033 * Math.sin(clock * 0.6)) * width;
@@ -93,8 +100,10 @@ export function mountAtmosphere(opening, motion) {
     }
     if (!motion.matches) {
       context.clearRect(0, 0, canvas.width, canvas.height);
-      art.style.removeProperty('--hero-dx');
-      art.style.removeProperty('--hero-dy');
+      print.style.removeProperty('transform');
+      offsetX = offsetY = 0;
+      lightX = targetX = 0.72;
+      lightY = targetY = 0.5;
     }
   }
 

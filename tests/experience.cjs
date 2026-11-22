@@ -224,6 +224,22 @@ async function run() {
         await scene.emulateMedia({reducedMotion:'reduce'});
         await scene.locator('.scene-effects:not([data-ready])').waitFor({state:'attached'});
       } else assert.equal(requests,0);
+      await scene.emulateMedia({reducedMotion:'no-preference'});
+      const positions=await scene.locator('#story-title').evaluate(async heading=>{
+        const chapter=heading.closest('section');
+        heading.scrollIntoView({behavior:'instant',block:'center'});
+        const samples=[];
+        for(let i=0;i<8;i++){
+          await new Promise(requestAnimationFrame);
+          samples.push({
+            opacity:Number(getComputedStyle(heading).opacity),
+            offset:heading.getBoundingClientRect().top-chapter.getBoundingClientRect().top
+          });
+        }
+        return samples;
+      });
+      assert.ok(positions.every(sample=>sample.opacity===1 && Math.abs(sample.offset-positions[0].offset)<1),
+        'Chapter text should be readable and stay in place from its first visible frame');
       await visual.close();
     }
     assert.deepEqual(errors,[]);

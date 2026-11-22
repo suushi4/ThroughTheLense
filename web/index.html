@@ -22,10 +22,8 @@
   <link rel="stylesheet" href="/home-lab.css">
   <link rel="stylesheet" href="/home-shelf.css">
   <link rel="stylesheet" href="/consent.css">
-  <link rel="stylesheet" href="/home-motion.css">
   <title>ThroughTheLense — Личный дневник ощущений</title>
   <script type="module" src="/home.mjs"></script>
-  <script type="module" src="/home-motion.mjs"></script>
   <script type="module" src="/consent.mjs"></script>
   <script type="module" src="/account-link.mjs"></script>
 </head>
@@ -41,15 +39,15 @@
     <div class="opening" data-memory="street">
     <section class="hero edge" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <h1 id="hero-title" data-reveal>Сохраните, <span class="hero-subtitle"><span class="hero-phrase">как ощущался</span> день</span></h1>
-        <p class="hero-description" data-reveal data-reveal-delay="1">Личный фотодневник для дней, к которым хочется вернуться. Добавьте снимки, несколько строк и песню. ThroughTheLense соберёт из них короткую сцену.</p>
-        <div class="hero-actions" data-reveal="controls" data-reveal-delay="2">
+        <h1 id="hero-title">Сохраните, <span class="hero-subtitle"><span class="hero-phrase">как ощущался</span> день</span></h1>
+        <p class="hero-description">Личный фотодневник для дней, к которым хочется вернуться. Добавьте снимки, несколько строк и песню. ThroughTheLense соберёт из них короткую сцену.</p>
+        <div class="hero-actions">
           <a class="action solid" href="/journal.html#new">Записать день <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
           <a class="watch-link" href="#examples">Посмотреть примеры <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15m-6-6 6 6 6-6"/></svg></a>
         </div>
       </div>
       <figure class="contact-print">
-        <div class="hero-art" data-reveal="media">
+        <div class="hero-art">
           <div class="print-window">
             <img src="/media/street-preview.webp" width="1120" height="747" alt="Мокрая дорога на фоне гор в вечернем свете" fetchpriority="high">
           </div>
@@ -61,7 +59,7 @@
         </div>
         <figcaption><span class="print-details"><span class="print-title">Домой без спешки</span><time datetime="2026-11-17">17 ноября</time></span></figcaption>
       </figure>
-      <div class="memory-dock" data-reveal="controls" hidden>
+      <div class="memory-dock" hidden>
         <div class="memory-tray" role="group" aria-label="Выбрать сцену для предпросмотра">
           <button type="button" class="memory-choice" data-memory="street" aria-controls="examples" aria-pressed="true"><img src="/media/street-preview.webp" width="48" height="48" alt="">Домой без спешки</button>
           <button type="button" class="memory-choice" data-memory="cocoa" aria-controls="examples" aria-pressed="false"><img src="/media/cocoa-preview.webp" width="48" height="48" alt="" loading="lazy">Какао у остановки</button>
@@ -84,14 +82,14 @@
       </div>
     </nav>
 
-    <section class="live-example" id="examples" tabindex="-1" aria-labelledby="example-title" data-tone="demos" data-phase="0" data-memory="street">
+    <section class="live-example" id="examples" tabindex="-1" aria-labelledby="example-title" data-phase="0" data-memory="street">
       <div class="screening-room edge">
-        <header class="scene-caption" data-reveal>
+        <header class="scene-caption">
           <p class="room-kicker">Пример из дневника</p>
           <h2 id="example-title">Домой без спешки</h2>
           <p class="room-label"><time datetime="2026-11-17">17 ноября</time></p>
         </header>
-        <div class="projector" data-reveal="controls">
+        <div class="projector">
           <div id="home-player">
             <figure class="player-placeholder">
               <img src="/media/street-preview.webp" alt="Мокрая дорога на фоне гор в вечернем свете" width="1120" height="747">
@@ -99,7 +97,7 @@
             </figure>
           </div>
         </div>
-        <div class="scene-description" data-reveal="controls" data-reveal-delay="1">
+        <div class="scene-description">
           <p class="scene-notes">После сдачи проекта мы вышли на улицу. На перекрёстке пропустили зелёный, чтобы дослушать песню.</p>
           <a class="example-link" href="/journal.html#day/demo-street">Открыть день в архиве <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M10 6h8v8"/></svg></a>
           <div class="sample-switcher" role="group" aria-label="Другие примеры" hidden>
@@ -112,40 +110,42 @@
       </div>
     </section>
 
-    <section class="guide edge" id="story" tabindex="-1" aria-labelledby="story-title" data-tone="making">
-      <div class="guide-copy">
-        <h2 id="story-title" class="chapter-title" data-reveal>Как собирается воспоминание</h2>
-        <p class="chapter-lead" data-reveal data-reveal-delay="1">В готовой сцене сначала виден снимок, затем на музыкальной отметке появляется ваша фраза. После неё возвращается тот же кадр.</p>
-        <ol class="creation-steps">
-          <li data-reveal><h3>Выберите кадр</h3><p>Добавьте до пяти фотографий. Одна станет обложкой, остальные сохранятся в материалах дня.</p></li>
-          <li data-reveal><h3>Запишите одну деталь</h3><p>Что вы услышали, заметили или почувствовали? В предпросмотре можно выбрать дословную фразу из своей записи.</p></li>
-          <li data-reveal><h3>Добавьте песню</h3><p>Дневник предложит точки перехода по звучанию. В редакторе их можно передвинуть и прослушать снова.</p></li>
-        </ol>
-        <a class="guide-link" id="use-example" href="/journal.html?example=demo-street#new" data-reveal>Открыть материалы «Домой без спешки» <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+    <section class="story-chapter" id="story" tabindex="-1" aria-labelledby="story-title">
+      <div class="guide edge">
+        <div class="guide-copy">
+          <h2 id="story-title" class="chapter-title">Как собирается воспоминание</h2>
+          <p class="chapter-lead">В готовой сцене сначала виден снимок, затем на музыкальной отметке появляется ваша фраза. После неё возвращается тот же кадр.</p>
+          <ol class="creation-steps">
+            <li><h3>Выберите кадр</h3><p>Добавьте до пяти фотографий. Одна станет обложкой, остальные сохранятся в материалах дня.</p></li>
+            <li><h3>Запишите одну деталь</h3><p>Что вы услышали, заметили или почувствовали? В предпросмотре можно выбрать дословную фразу из своей записи.</p></li>
+            <li><h3>Добавьте песню</h3><p>Дневник предложит точки перехода по звучанию. В редакторе их можно передвинуть и прослушать снова.</p></li>
+          </ol>
+          <a class="guide-link" id="use-example" href="/journal.html?example=demo-street#new">Открыть материалы «Домой без спешки» <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+        </div>
+        <figure class="guide-visual">
+          <div class="chapter-photo"><img src="/media/rain.jpg" alt="Фонари отражаются в мокром асфальте после дождя" width="768" height="512" loading="lazy" decoding="async"></div>
+          <figcaption>Второй снимок из дня «Домой без спешки»</figcaption>
+        </figure>
       </div>
-      <figure class="guide-visual" data-reveal="media">
-        <div class="chapter-photo"><img src="/media/rain.jpg" alt="Фонари отражаются в мокром асфальте после дождя" width="768" height="512" loading="lazy" decoding="async"></div>
-        <figcaption>Второй снимок из дня «Домой без спешки»</figcaption>
-      </figure>
     </section>
 
-    <section class="music-chapter" id="experiment" tabindex="-1" aria-labelledby="experiment-title" data-tone="music">
+    <section class="music-chapter" id="experiment" tabindex="-1" aria-labelledby="experiment-title">
       <div class="edge">
         <header class="chapter-heading">
-          <h2 class="chapter-title" id="experiment-title" data-reveal>Один кадр. Три разных ритма</h2>
-          <p class="chapter-lead" data-reveal data-reveal-delay="1">Попробуйте разные песни с теми же фото и фразой. На шкале видно, когда появятся слова. Запустите сцену, чтобы почувствовать разницу.</p>
+          <h2 class="chapter-title" id="experiment-title">Один кадр. Три разных ритма</h2>
+          <p class="chapter-lead">Попробуйте разные песни с теми же фото и фразой. На шкале видно, когда появятся слова. Запустите сцену, чтобы почувствовать разницу.</p>
         </header>
-        <div id="home-lab" data-reveal="controls"><p class="feature-loading" role="status">Подготавливаем сравнение песен…</p><noscript><a href="/journal.html#day/demo-street">Открыть пример в дневнике</a></noscript></div>
+        <div id="home-lab"><p class="feature-loading" role="status">Подготавливаем сравнение песен…</p><noscript><a href="/journal.html#day/demo-street">Открыть пример в дневнике</a></noscript></div>
       </div>
     </section>
 
-    <section class="collection-chapter edge" id="collection" tabindex="-1" aria-labelledby="collection-title" data-tone="paper">
+    <section class="collection-chapter edge" id="collection" tabindex="-1" aria-labelledby="collection-title">
       <header class="collection-intro">
-        <h2 class="chapter-title" id="collection-title" data-reveal>Дни, к которым хочется вернуться</h2>
-        <p class="chapter-lead" data-reveal data-reveal-delay="1">В архиве сохраняются сцена и исходные материалы. Можно найти день по дате, названию или песне, снова открыть его и скачать копию.</p>
+        <h2 class="chapter-title" id="collection-title">Дни, к которым хочется вернуться</h2>
+        <p class="chapter-lead">В архиве сохраняются сцена и исходные материалы. Можно найти день по дате, названию или песне, снова открыть его и скачать копию.</p>
       </header>
-      <div id="home-shelf" data-reveal="controls"><p class="feature-loading" role="status">Открываем гостевой архив…</p><noscript><a href="/journal.html?mode=guest#archive">Открыть гостевой архив</a></noscript></div>
-      <div class="archive-utilities" data-reveal="controls">
+      <div id="home-shelf"><p class="feature-loading" role="status">Открываем гостевой архив…</p><noscript><a href="/journal.html?mode=guest#archive">Открыть гостевой архив</a></noscript></div>
+      <div class="archive-utilities">
         <a href="/journal.html#archive">Перейти к поиску по архиву <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
         <a href="#day-copy" id="copy-help-link">Как сохранить копию дня</a>
       </div>
@@ -153,30 +153,30 @@
 
     <section class="questions-chapter" id="questions" tabindex="-1" aria-labelledby="questions-title">
       <div class="edge question-layout">
-        <h2 class="chapter-title" id="questions-title" data-reveal>Перед первой записью</h2>
+        <h2 class="chapter-title" id="questions-title">Перед первой записью</h2>
         <div class="question-list">
-          <details data-reveal><summary>Нужен ли аккаунт?</summary><p>Начать можно в гостевом режиме. Дни и черновики в этом режиме хранятся в текущем браузере. Для архива аккаунта используйте <a href="/account.html">вход в дневник</a>.</p></details>
-          <details data-reveal data-reveal-delay="1"><summary>Какие фотографии и песни подойдут?</summary><p>До пяти фотографий JPEG, PNG или WebP, до 8 МиБ каждая. Можно взять одну из трёх песен дневника или добавить свой MP3 или WAV до 32 МиБ. Длинную песню можно обрезать в редакторе. В записи хранится фрагмент от 3 до 60 секунд, до 12 МиБ.</p></details>
-          <details id="day-copy" data-reveal><summary>Как скачать или перенести день?</summary><p>В своей записи откройте «Действия», затем «Скачать копию». Файл содержит текст, снимки, песню и настройки. Чтобы восстановить день, в архиве нажмите «Открыть файл дня».</p></details>
-          <details data-reveal><summary>Можно поправить собранную сцену?</summary><p>Да. Можно выбрать дословную фразу из рассказа, задержать снимок перед её появлением и показать второй кадр. Переходы можно точно настроить по музыке. Сохранённую запись можно снова открыть для редактирования.</p></details>
+          <details><summary>Нужен ли аккаунт?</summary><p>Начать можно в гостевом режиме. Дни и черновики в этом режиме хранятся в текущем браузере. Для архива аккаунта используйте <a href="/account.html">вход в дневник</a>.</p></details>
+          <details><summary>Какие фотографии и песни подойдут?</summary><p>До пяти фотографий JPEG, PNG или WebP, до 8 МиБ каждая. Можно взять одну из трёх песен дневника или добавить свой MP3 или WAV до 32 МиБ. Длинную песню можно обрезать в редакторе. В записи хранится фрагмент от 3 до 60 секунд, до 12 МиБ.</p></details>
+          <details id="day-copy"><summary>Как скачать или перенести день?</summary><p>В своей записи откройте «Действия», затем «Скачать копию». Файл содержит текст, снимки, песню и настройки. Чтобы восстановить день, в архиве нажмите «Открыть файл дня».</p></details>
+          <details><summary>Можно поправить собранную сцену?</summary><p>Да. Можно выбрать дословную фразу из рассказа, задержать снимок перед её появлением и показать второй кадр. Переходы можно точно настроить по музыке. Сохранённую запись можно снова открыть для редактирования.</p></details>
         </div>
       </div>
     </section>
 
-    <section class="final-chapter" aria-labelledby="final-title" data-tone="closing">
+    <section class="final-chapter" aria-labelledby="final-title">
       <div class="edge final-copy">
         <div>
-          <h2 class="chapter-title" id="final-title" data-reveal>Начните с одного дня</h2>
-          <p data-reveal data-reveal-delay="1">Возьмите снимок из галереи. Вспомните одну деталь, которую он не передаёт.</p>
-          <a class="action solid" href="/journal.html#new" data-reveal data-reveal-delay="2">Записать день <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+          <h2 class="chapter-title" id="final-title">Начните с одного дня</h2>
+          <p>Возьмите снимок из галереи. Вспомните одну деталь, которую он не передаёт.</p>
+          <a class="action solid" href="/journal.html#new">Записать день <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
         </div>
-        <img class="final-photo" src="/media/hero-bus.webp" alt="Фонари вечернего города сквозь мокрое окно автобуса" width="1536" height="1024" loading="lazy" decoding="async" data-reveal="media">
+        <img class="final-photo" src="/media/hero-bus.webp" alt="Фонари вечернего города сквозь мокрое окно автобуса" width="1536" height="1024" loading="lazy" decoding="async">
       </div>
     </section>
 
   </main>
   <footer class="home-foot edge">
-    <a class="wordmark" href="/" aria-label="ThroughTheLense, главная" translate="no" data-reveal><img src="/brand-mark.svg" alt="" width="28" height="28"><span>ThroughTheLense</span></a>
+    <a class="wordmark" href="/" aria-label="ThroughTheLense, главная" translate="no"><img src="/brand-mark.svg" alt="" width="28" height="28"><span>ThroughTheLense</span></a>
     <nav aria-label="Ссылки в подвале">
       <a href="/journal.html#archive">Архив</a>
       <a href="/privacy.html">Конфиденциальность</a>
