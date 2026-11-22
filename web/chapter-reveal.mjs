@@ -15,7 +15,7 @@ export function mountChapterReveals(motion){
       if(nearEdge && motion.matches)target.dataset.chapterReveal='playing';
       else target.removeAttribute('data-chapter-reveal');
     }
-  }, {rootMargin:`0px 0px -${Math.round(viewportHeight*.10)}px 0px`});
+  }, {rootMargin:`0px 0px -${Math.round(viewportHeight*.25)}px 0px`});
 
   for(const element of waiting){
     element.dataset.chapterReveal='waiting';

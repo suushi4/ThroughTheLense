@@ -8,7 +8,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   [data-chapter-reveal="waiting"] { opacity: 0; }
-  [data-chapter-reveal="playing"] { animation: chapter-reveal 500ms cubic-bezier(.22,.72,.25,1); }
+  [data-chapter-reveal="playing"] { animation: chapter-reveal 660ms cubic-bezier(.25,.6,.3,1); }
   @keyframes chapter-reveal {
     from { opacity: 0; transform: translateY(clamp(36px,6.7vw,96px)); }
     to { opacity: 1; transform: translateY(0); }

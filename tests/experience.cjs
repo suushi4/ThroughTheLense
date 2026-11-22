@@ -233,19 +233,25 @@ async function run() {
       await scene.emulateMedia({reducedMotion:'no-preference'});
       await scene.reload();
       const entrance=await scene.locator('#experiment .chapter-heading').evaluate(async heading=>{
+        const top=scrollY+heading.getBoundingClientRect().top;
+        scrollTo({top:top-innerHeight*.84,behavior:'instant'});
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+        const opacityBefore=Number(getComputedStyle(heading).opacity);
         const started=new Promise(resolve=>heading.addEventListener('animationstart',()=>{
           const style=getComputedStyle(heading);
           resolve({delay:style.animationDelay,duration:style.animationDuration,
-            opacity:Number(style.opacity),rise:new DOMMatrixReadOnly(style.transform).m42});
+            opacity:Number(style.opacity),rise:new DOMMatrixReadOnly(style.transform).m42,opacityBefore});
         },{once:true}));
-        const edge=window.innerHeight*.9-12;
-        scrollTo({top:scrollY+heading.getBoundingClientRect().top-edge,behavior:'instant'});
+        scrollTo({top:top-innerHeight*.73,behavior:'instant'});
         return Promise.race([started,new Promise(resolve=>setTimeout(()=>resolve(null),1000))]);
       });
       assert.ok(entrance && entrance.opacity<1,'Text should animate upon entering the viewport');
+      assert.equal(entrance.opacityBefore,0,'Text near the bottom should wait for the reader to scroll farther');
       assert.equal(entrance.delay,'0s');
       assert.ok(entrance.rise>10,'The chapter should visibly rise into place');
-      assert.ok(parseFloat(entrance.duration)<=.55,'Entrance should finish promptly');
+      const duration=parseFloat(entrance.duration);
+      assert.ok(duration>=.6 && duration<=.75,'The entrance should be easy to see without slowing navigation');
       await scene.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#experiment .chapter-heading')).opacity)===1);
       const positions=await scene.locator('#story-title').evaluate(async title=>{
         const heading=title.parentElement;
