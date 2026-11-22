@@ -134,9 +134,10 @@ async function run() {
     const email=address();
     await page.getByLabel('Электронная почта').fill(email);
     await page.getByLabel('Пароль').fill(password);
+    await page.getByLabel('Принимаю условия использования').check();
     await page.getByRole('button',{name:'Создать аккаунт',exact:true}).click();
-    await page.waitForURL(url=>url.pathname==='/' && !url.hash);
-    await page.locator('#personal-home:not([hidden])').waitFor();
+    await page.locator('#account-agreements').waitFor();
+    assert.equal(new URL(page.url()).pathname, '/account.html');
     await page.goto('/journal.html#archive');
     await page.getByRole('link',{name:'Ваш аккаунт'}).waitFor();
     assert.match(await page.locator('#storage-note').innerText(),/вашем аккаунте/);
@@ -175,6 +176,9 @@ async function run() {
     await freshPage.getByText('Неверная почта или пароль.').waitFor();
     await freshPage.getByLabel('Пароль').fill(password);
     await freshPage.getByRole('button',{name:'Войти',exact:true}).click();
+    await freshPage.locator('#account-agreements').waitFor();
+    assert.equal(new URL(freshPage.url()).pathname, '/account.html');
+    await freshPage.getByRole('link',{name:'Открыть кабинет'}).click();
     await freshPage.locator('#personal-shelf .home-shelf-day').filter({hasText:expectedDay}).click();
     await freshPage.locator('.stage img').waitFor();
     await freshPage.getByRole('button',{name:/^За кадром/}).click();

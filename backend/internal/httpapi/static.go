@@ -22,7 +22,7 @@ func init() {
 	}
 }
 
-var publicPages = []string{"/", "/privacy.html", "/terms.html"}
+var publicPages = []string{"/", "/gallery.html", "/help.html", "/sounds.html", "/privacy.html", "/terms.html"}
 
 // static serves WEB_DIR like serve.py: no directory listings, 404.html for
 // missing files, byte ranges for media, and no caching of code and pages so

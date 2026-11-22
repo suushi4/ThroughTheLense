@@ -1,4 +1,4 @@
-#visitor-home[hidden], #personal-home[hidden], .home-mast .story-link[hidden] { display: none; }
+#personal-home[hidden], #cabinet-guest[hidden] { display: none; }
 .personal-home { max-width: 890px; min-height: 62vh; padding-block: clamp(2rem, 7vw, 5rem); }
 .personal-home h1 { margin: 0 0 .7rem; font-size: clamp(2rem, 7vw, 4.25rem); line-height: 1.05; overflow-wrap: anywhere; }
 .personal-home-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1.35rem 2rem; }

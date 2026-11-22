@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Недавние записи и черновики личного фотодневника.">
+  <title>Кабинет · ThroughTheLense</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/home.css">
+  <link rel="stylesheet" href="/public-page.css">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/home-shelf.css">
+  <link rel="stylesheet" href="/personal-home.css">
+  <script type="module" src="/personal-home.mjs"></script>
+  <script type="module" src="/account-link.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#content">К содержанию</a>
+  <header class="home-mast"><div class="edge mast-inner public-mast">
+    <a class="wordmark" href="/"><img alt="" src="/brand-mark.svg" width="36" height="36"><span>ThroughThe<em>Lense</em></span></a>
+    <nav aria-label="Главная навигация"><a href="/cabinet.html" data-cabinet-link hidden>Кабинет</a><a class="account-link" href="/account.html" data-account-link>Войти</a></nav>
+  </div></header>
+  <main id="content" tabindex="-1">
+    <section id="personal-home" class="edge personal-home" hidden>
+      <h1>Кабинет</h1>
+      <p id="cabinet-greeting" hidden></p>
+      <div class="personal-home-actions">
+        <a class="action solid" id="personal-new-day" href="/journal.html#new">Записать день</a>
+        <a class="action" href="/journal.html#archive">Открыть архив</a>
+        <a class="action" href="/account.html">Настройки профиля</a>
+      </div>
+      <div id="personal-shelf"></div>
+    </section>
+    <section id="cabinet-guest" class="edge public-page" hidden>
+      <h1>Кабинет</h1>
+      <p class="page-lead">Войдите, чтобы открыть записи и черновики своего аккаунта.</p>
+      <a class="action solid" href="/account.html">Войти в аккаунт</a>
+      <p><a href="/journal.html?mode=guest#archive">Открыть гостевой архив</a></p>
+    </section>
+    <p id="cabinet-loading" class="edge" role="status">Открываем кабинет…</p>
+    <noscript><p class="edge">Включите JavaScript, чтобы открыть кабинет.</p></noscript>
+  </main>
+  <footer class="home-foot edge"><nav aria-label="Ссылки в подвале">
+    <a href="/gallery.html">Примеры</a><a href="/sounds.html">Звуки места</a><a href="/help.html">Помощь</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия</a>
+  </nav></footer>
+</body>
+</html>
