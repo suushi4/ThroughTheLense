@@ -3,7 +3,7 @@ const path = require('node:path');
 let chromium;
 try { ({ chromium } = require('playwright')); }
 catch { ({ chromium } = require('../gstack/node_modules/playwright')); }
-const base = 'http://127.0.0.1:8000/journal.html';
+const base = new URL('/journal.html', process.env.TTL_TEST_URL || 'http://127.0.0.1:8000').href;
 const media = file => path.join(__dirname, '../web/media', file);
 async function run() {
   const browser = await chromium.launch();
@@ -60,7 +60,7 @@ async function run() {
     await page.getByRole('button',{name:'Повторить',exact:true}).waitFor();
     await page.getByRole('button',{name:'С начала',exact:true}).click();
     await page.waitForSelector('.stage[data-phase="0"]');
-    await page.getByRole('button',{name:'Выключить звук'}).click();
+    await page.getByRole('button',{name:'Выключить звук', exact: true}).click();
     assert.equal(await page.getByRole('button',{name:'Включить звук'}).count(),1);
     await page.getByRole('link',{name:'Записать день',exact:true}).click();
     await page.getByRole('button',{name:'Посмотреть сцену'}).click();

@@ -9,6 +9,7 @@
     "test:experience": "node tests/experience.cjs",
     "test:account": "node tests/account-state.cjs",
     "test:ambience": "node tests/ambience.cjs",
+    "test:diary-extras": "node tests/diary-extras.cjs",
     "test:submission": "node tests/submission.cjs"
   },
   "devDependencies": {

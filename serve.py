@@ -10,7 +10,7 @@ import webbrowser
 from account_server import JournalAPI, prepare_accounts
 
 WEB_ROOT = Path(__file__).resolve().parent / "web"
-PUBLIC_PAGES = ("/", "/privacy.html", "/terms.html")
+PUBLIC_PAGES = ("/", "/gallery.html", "/privacy.html", "/terms.html")
 DEMO_AUDIO = {f"/media/{name}.wav" for name in ("street", "cocoa", "stage")}
 AUDIO_RANGE = re.compile(r"bytes=([0-9]{0,19})-([0-9]{0,19})")
 

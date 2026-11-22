@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/home.css">
   <link rel="stylesheet" href="/account.css">
+  <link rel="stylesheet" href="/diary-extras.css">
   <link rel="stylesheet" href="/consent.css">
   <script type="module" src="/consent.mjs"></script>
   <title>Аккаунт · ThroughTheLense</title>
@@ -52,6 +53,13 @@
               <p class="account-hint">Не менее 8 символов. На других устройствах понадобится войти заново.</p>
               <button class="action" type="submit" id="password-save">Сменить пароль</button>
             </form></template>
+          <details class="privacy-tools"><summary>Данные и приватность</summary>
+            <ul><li><a href="/privacy.html#storage">Где хранятся записи и черновики</a></li>
+            <li><a href="/privacy.html#copies">Как скачать копию или удалить запись</a></li>
+            <li><a href="/privacy.html#sharing">Как отозвать публичную ссылку</a></li>
+            <li><a href="/privacy.html#analytics">Настройки аналитики</a></li>
+            <li><a href="/privacy.html#account-deletion">Запрос на удаление аккаунта</a></li></ul>
+          </details>
           <button class="auth-switch" id="sign-out" type="button">Выйти из аккаунта</button>
         </div>
         <p id="auth-status" class="auth-status" role="status">Открываем аккаунт…</p>
