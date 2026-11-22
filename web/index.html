@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/home-chapters.css">
   <link rel="stylesheet" href="/home-lab.css">
   <link rel="stylesheet" href="/home-shelf.css">
+  <link rel="stylesheet" href="/personal-home.css">
   <link rel="stylesheet" href="/consent.css">
   <title>ThroughTheLense — Личный дневник ощущений</title>
   <script type="module" src="/home.mjs"></script>
@@ -36,6 +37,16 @@
     </div>
   </header>
   <main id="main-content" tabindex="-1">
+    <section id="personal-home" class="edge personal-home" hidden>
+      <h1>Мой дневник</h1>
+      <p>Здесь ваши недавние дни и незаконченные записи.</p>
+      <div class="personal-home-actions">
+        <a class="action solid" id="personal-new-day" href="/journal.html#new">Записать день</a>
+        <a class="action" href="/journal.html#archive">Открыть архив</a>
+      </div>
+      <div id="personal-shelf"></div>
+    </section>
+    <div id="visitor-home">
     <div class="opening" data-memory="street">
     <section class="hero edge" aria-labelledby="hero-title">
       <div class="hero-copy">
@@ -174,6 +185,7 @@
       </div>
     </section>
 
+    </div>
   </main>
   <footer class="home-foot edge">
     <a class="wordmark" href="/" aria-label="ThroughTheLense, главная" translate="no"><img src="/brand-mark.svg" alt="" width="28" height="28"><span>ThroughTheLense</span></a>

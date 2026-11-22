@@ -4,14 +4,14 @@ import {icon} from './icons.mjs';
 import {escapeHTML as h} from './ui.mjs';
 
 export const avatarPresets = [
-  {id:'lens', icon:'aperture', color:'#3f5a3c', label:'Объектив'},
-  {id:'note', icon:'music', color:'#7a4b2a', label:'Нота'},
-  {id:'frame', icon:'image', color:'#2f4e5e', label:'Кадр'},
-  {id:'wave', icon:'wave', color:'#5b4a6b', label:'Волна'},
-  {id:'clock', icon:'clock', color:'#6b5a2a', label:'Часы'},
-  {id:'calendar', icon:'calendar', color:'#8a3f3a', label:'Календарь'},
-  {id:'stack', icon:'stack', color:'#3e4f46', label:'Стопка снимков'},
-  {id:'folder', icon:'folder', color:'#56603a', label:'Папка'},
+  {id:'lens', icon:'avatar-sun', color:'#3f5a3c', label:'Солнце'},
+  {id:'note', icon:'avatar-headphones', color:'#7a4b2a', label:'Наушники'},
+  {id:'frame', icon:'avatar-mountain', color:'#2f4e5e', label:'Горы'},
+  {id:'wave', icon:'avatar-waves', color:'#5b4a6b', label:'Волны'},
+  {id:'clock', icon:'avatar-moon', color:'#6b5a2a', label:'Луна'},
+  {id:'calendar', icon:'avatar-spark', color:'#8a3f3a', label:'Искра'},
+  {id:'stack', icon:'avatar-leaf', color:'#3e4f46', label:'Лист'},
+  {id:'folder', icon:'avatar-compass', color:'#56603a', label:'Компас'},
 ];
 const letterColors = ['#3f5a3c', '#7a4b2a', '#2f4e5e', '#5b4a6b', '#8a3f3a', '#56603a'];
 

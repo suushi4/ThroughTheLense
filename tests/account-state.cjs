@@ -44,7 +44,12 @@ async function run() {
     await page.getByLabel('Электронная почта').fill(email);
     await page.getByLabel('Пароль').fill(password);
     await page.getByRole('button', {name: 'Создать аккаунт', exact: true}).click();
-    await page.waitForURL('**/journal.html#archive');
+    await page.waitForURL(url => url.pathname === '/' && !url.hash);
+    await page.locator('#personal-home:not([hidden])').waitFor();
+    assert.equal(await page.locator('#visitor-home').isVisible(), false);
+    await page.goto('/journal.html#archive');
+    await page.getByRole('heading',{name:'Ваш первый день'}).waitFor();
+    assert.equal(await page.locator('.day-card, [data-filter="demo"]:visible').count(), 0);
 
     // Signed in: «Мой аккаунт» on every page.
     for (const [path, text] of Object.entries(await accountLinks(page))) assert.equal(text, 'Мой аккаунт', path);
@@ -64,18 +69,21 @@ async function run() {
 
     // Track hint: the cover suggests a diary track, but nothing is chosen.
     await page.goto('/journal.html#new');
+    await page.locator('#photos').waitFor();
+    assert.equal(await page.locator('#fill-demo, [data-track^="demo-"]').count(), 0);
+    await page.goto('/journal.html?example=demo-street#new');
     await page.locator('#fill-demo').click();
     await page.waitForFunction(() => document.querySelector('#photo-list')?.children.length === 2);
     await page.locator('#remove-song').click();
     await page.locator('.track-fit:not([hidden])').waitFor();
     assert.equal(await page.locator('.track-fit:not([hidden])').count(), 1);
-    assert.equal(await page.locator('[data-track="demo-street"] .track-fit').isVisible(), true);
+    assert.equal(await page.locator('[data-track]').count(), 10);
     assert.equal(await page.locator('[data-track][aria-pressed="true"]').count(), 0);
     assert.match(await page.locator('#track-hint').innerText(), /Выбор за вами/);
-    await page.locator('[data-track="demo-cocoa"]').click();
-    await page.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Два стаканчика'));
+    await page.locator('[data-track="track-night-talk"]').click();
+    await page.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Ночной разговор'));
     assert.equal(await page.locator('[data-track="demo-cocoa"]').getAttribute('aria-pressed'), 'true');
-    assert.equal(await page.locator('[data-track="demo-street"]').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.locator('[data-track="track-morning-light"]').getAttribute('aria-pressed'), 'false');
 
     // Save the day into the account.
     await page.locator('#prepare').click();
@@ -92,7 +100,7 @@ async function run() {
 
     // Home shelf shows the account archive and links into it.
     await page.goto('/');
-    await page.locator('#collection').scrollIntoViewIfNeeded();
+    await page.locator('#personal-home:not([hidden])').waitFor();
     await page.getByRole('heading', {name: 'Ваш архив'}).waitFor();
     const shelfDay = page.locator('.home-shelf-day').filter({hasText: 'День для полки'});
     await shelfDay.waitFor();
@@ -119,6 +127,7 @@ async function run() {
     await page.goto('/account.html');
     await page.locator('#profile-form:not([hidden])').waitFor();
     await page.getByText('1 день в дневнике').waitFor();
+    assert.equal(await page.locator('#profile-first-day').innerText(), await page.locator('#profile-last-day').innerText());
     await page.getByLabel('Имя в дневнике').fill('  Азат  ');
     await page.locator('.avatar-option').filter({has: page.locator('input[value="lens"]')}).click();
     await page.getByRole('button', {name: 'Сохранить профиль'}).click();

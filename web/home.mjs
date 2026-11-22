@@ -1,3 +1,4 @@
+import {sessionUser} from './account-link.mjs';
 import {demos} from './demo.mjs';
 import {mountAtmosphere} from './home-atmosphere.mjs';
 import {mountPlayer} from './player.mjs';
@@ -23,6 +24,9 @@ function nearViewport(host, load, fallbackHref, fallbackText) {
 const journalRoutes = /^#(?:archive|new|preview|edit|day)(?:\/|$)/;
 if (journalRoutes.test(location.hash)) {
   location.replace('/journal.html' + location.hash);
+} else if (await sessionUser()) {
+  const {showPersonalHome} = await import('./personal-home.mjs');
+  showPersonalHome(await sessionUser());
 } else {
   const host = document.querySelector('#home-player');
   const opening = document.querySelector('.opening');

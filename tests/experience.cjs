@@ -135,11 +135,13 @@ async function run() {
     await page.getByLabel('Электронная почта').fill(email);
     await page.getByLabel('Пароль').fill(password);
     await page.getByRole('button',{name:'Создать аккаунт',exact:true}).click();
-    await page.waitForURL('**/journal.html#archive');
+    await page.waitForURL(url=>url.pathname==='/' && !url.hash);
+    await page.locator('#personal-home:not([hidden])').waitFor();
+    await page.goto('/journal.html#archive');
     await page.getByRole('link',{name:'Ваш аккаунт'}).waitFor();
     assert.match(await page.locator('#storage-note').innerText(),/вашем аккаунте/);
 
-    await page.locator('.create-link').click();
+    await page.goto('/journal.html?example=demo-street#new');
     await page.locator('#fill-demo').click();
     await page.waitForFunction(() => document.querySelector('#photo-list')?.children.length === 2);
     await page.locator('#prepare').click();
