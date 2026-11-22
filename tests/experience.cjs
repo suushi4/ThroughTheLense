@@ -235,17 +235,20 @@ async function run() {
       const entrance=await scene.locator('#experiment .chapter-heading').evaluate(async heading=>{
         const started=new Promise(resolve=>heading.addEventListener('animationstart',()=>{
           const style=getComputedStyle(heading);
-          resolve({delay:style.animationDelay,duration:style.animationDuration,opacity:Number(style.opacity)});
+          resolve({delay:style.animationDelay,duration:style.animationDuration,
+            opacity:Number(style.opacity),rise:new DOMMatrixReadOnly(style.transform).m42});
         },{once:true}));
-        const edge=window.innerHeight-12;
+        const edge=window.innerHeight*.9-12;
         scrollTo({top:scrollY+heading.getBoundingClientRect().top-edge,behavior:'instant'});
         return Promise.race([started,new Promise(resolve=>setTimeout(()=>resolve(null),1000))]);
       });
       assert.ok(entrance && entrance.opacity<1,'Text should animate upon entering the viewport');
       assert.equal(entrance.delay,'0s');
-      assert.ok(parseFloat(entrance.duration)<=.25,'Entrance should finish promptly');
+      assert.ok(entrance.rise>10,'The chapter should visibly rise into place');
+      assert.ok(parseFloat(entrance.duration)<=.55,'Entrance should finish promptly');
       await scene.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#experiment .chapter-heading')).opacity)===1);
-      const positions=await scene.locator('#story-title').evaluate(async heading=>{
+      const positions=await scene.locator('#story-title').evaluate(async title=>{
+        const heading=title.parentElement;
         const chapter=heading.closest('section');
         heading.scrollIntoView({behavior:'instant',block:'center'});
         const samples=[];

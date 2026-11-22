@@ -7,10 +7,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-chapter-reveal="waiting"] { opacity: .16; }
-  [data-chapter-reveal="playing"] { animation: chapter-reveal 220ms cubic-bezier(.2,.65,.3,1); }
+  [data-chapter-reveal="waiting"] { opacity: 0; }
+  [data-chapter-reveal="playing"] { animation: chapter-reveal 500ms cubic-bezier(.22,.72,.25,1); }
   @keyframes chapter-reveal {
-    from { opacity: .16; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(clamp(36px,6.7vw,96px)); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
