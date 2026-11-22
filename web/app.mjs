@@ -282,8 +282,10 @@ async function archive(stamp) {
     main.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)));
     let content;
     if(calendar){
-      calendarMonth ||= visible[0]?.dayDate.slice(0,7) || localDate().slice(0,7);
-      content=renderArchiveCalendar(visible,calendarMonth,calendarDate,card);
+      const today=localDate(), thisMonth=today.slice(0,7);
+      calendarMonth ||= visible.find(day=>day.dayDate<=today)?.dayDate.slice(0,7) || thisMonth;
+      if(calendarMonth>thisMonth){calendarMonth=thisMonth;calendarDate='';}
+      content=renderArchiveCalendar(visible,calendarMonth,calendarDate,card,today);
     }
     else if(visible.length){
       const months=Map.groupBy(visible,day=>day.dayDate.slice(0,7));
@@ -300,7 +302,8 @@ async function archive(stamp) {
       calendarMonth=shiftMonth(calendarMonth,Number(step));
       calendarDate='';
       draw();
-      $('[data-month-step="'+step+'"]').focus();
+      const next=$('[data-month-step="'+step+'"]');
+      (next.disabled?$('[data-month-step="-1"]'):next).focus();
     });
     main.querySelectorAll('[data-calendar-date]').forEach(button=>button.onclick=()=>{
       calendarDate=button.dataset.calendarDate;
@@ -338,7 +341,7 @@ async function formPage(stamp,editing){
       <div class="form-line"><div class="material-status"><progress id="material-progress" max="3" value="0" aria-label="Готовность материалов"></progress><span id="material-count">0 из 3 готово</span></div>
         ${sample?`<button type="button" class="textbtn" id="fill-demo">${icon('folder',15)} ${h(sampleLabel)}</button>`:''} </div>
       <section class="form-step" aria-labelledby="step-story">${step('story','1','Рассказ')}
-        <div class="field"><label for="date">Дата дня</label><input type="date" id="date" required aria-describedby="err-date"><p id="err-date" class="error" role="alert"></p></div>
+        <div class="field"><label for="date">Дата дня</label><input type="date" id="date" required max="${localDate()}" aria-describedby="err-date"><p id="err-date" class="error" role="alert"></p></div>
         <div class="field"><label for="story">Как прошёл день?</label><textarea id="story" required rows="4" placeholder="Запомнилось, как…" aria-describedby="err-story"></textarea><p id="err-story" class="error" role="alert"></p></div>
         <div class="field"><label for="memory-detail">Что осталось за кадром? <small>Необязательно</small></label><textarea id="memory-detail" rows="2" maxlength="180" placeholder="Что вы услышали, почувствовали или заметили?"></textarea></div>
       </section>
@@ -362,9 +365,12 @@ async function formPage(stamp,editing){
             <label for="trim-length">Длина фрагмента</label><select id="trim-length"></select>
             <button class="btn secondary" id="apply-trim" type="button">Вырезать фрагмент</button>
           </div></details><p id="err-song" class="error" role="alert"></p></div>
-        <fieldset class="field track-picks"><legend>Нет своей песни? Возьмите трек из дневника</legend>
+        <fieldset class="field track-picks"><legend>Музыка из дневника</legend>
+          <label class="sr-only" for="track-query">Поиск музыки из дневника</label>
+          <input type="search" id="track-query" placeholder="Название или настроение" autocomplete="off">
           <p class="hint" id="track-hint" role="status"></p>
-          <div class="track-options">${availableTracks.map(x=>`<button type="button" class="track-option" data-track="${x.id}" aria-pressed="false" title="${h(x.mood)}">${icon('music',15)}<span>${h(x.audioName)}</span><small class="track-fit" hidden>подходит к фото</small></button>`).join('')}</div></fieldset>
+          <div class="track-options">${availableTracks.map(track=>`<button type="button" class="track-option" data-track="${track.id}" aria-pressed="false">${icon('music',15)}<span class="track-label"><span>${h(track.audioName)}</span><small>${h(track.mood)}</small><small class="track-fit" hidden>подходит к фото</small></span></button>`).join('')}</div>
+          <p class="hint" id="track-empty" role="status"></p></fieldset>
         <fieldset class="field ambience-picks"><legend>Звуки места</legend>
           <p class="hint" id="ambience-hint" role="status"></p>
           <details class="collection-help"><summary>Как подбираются звуки?</summary><p>Когда доступен подбор по фото, проверяется обложка. В остальных случаях учитываются слова записи. Любой звук можно убрать или заменить вручную. <a href="/privacy.html#ambience">Как используется фото</a></p></details>
@@ -394,7 +400,7 @@ async function formPage(stamp,editing){
     $('#busy').textContent=formBusy?'Собираем сцену…':pending?'Загружаем материалы…':'';
   }
   function updateProgress(){
-    const ready={story:Boolean(d.dayDate && words(recordedText(d)).length),photos:Boolean(d.photos.length),song:Boolean(d.audio)};
+    const ready={story:Boolean(d.dayDate && d.dayDate<=localDate() && words(recordedText(d)).length),photos:Boolean(d.photos.length),song:Boolean(d.audio)};
     const count=Object.values(ready).filter(Boolean).length;
     $('#material-progress').value=count;
     $('#material-count').textContent=count+' из 3 готово';
@@ -556,8 +562,18 @@ async function formPage(stamp,editing){
       if(current() && request===audioRequest)errorText('song','Не удалось вырезать звук. Попробуйте другой MP3 или WAV.');
     }finally{pending--;syncButton();trimButton.disabled=false;trimButton.textContent='Вырезать фрагмент';}
   };
-  $('#date').value=d.dayDate;$('#story').value=d.text;$('#memory-detail').value=d.detail || '';picks();updateProgress();
-  $('#date').oninput=e=>{d.dayDate=e.target.value;$('#proof-date').textContent=d.dayDate?dateLabel(d.dayDate):'';changed();errorText('date','');};
+  const dateField=$('#date');
+  const futureDateMessage='Выберите сегодняшний или прошедший день.';
+  dateField.value=d.dayDate;$('#story').value=d.text;$('#memory-detail').value=d.detail || '';picks();updateProgress();
+  if(dateField.validity.rangeOverflow)errorText('date',futureDateMessage);
+  dateField.onfocus=()=>{dateField.max=localDate();};
+  dateField.oninput=()=>{
+    dateField.max=localDate();
+    d.dayDate=dateField.value;
+    $('#proof-date').textContent=d.dayDate?dateLabel(d.dayDate):'';
+    changed();
+    errorText('date',dateField.validity.rangeOverflow?futureDateMessage:'');
+  };
   $('#story').oninput=e=>{d.text=e.target.value;drawProofQuote();changed();errorText('story','');};
   $('#story').onchange=suggestSounds;
   $('#memory-detail').oninput=e=>{d.detail=e.target.value;d.quote='';drawProofQuote();changed();};
@@ -618,7 +634,18 @@ async function formPage(stamp,editing){
     dialog.querySelector('[data-confirm]').onclick=()=>{dialog.close();loadExample();};
     dialog.querySelector('[data-cancel]').focus();
   };
-  for(const b of main.querySelectorAll('[data-track]'))b.onclick=()=>chooseTrack(b.dataset.track);
+  const trackButtons=[...main.querySelectorAll('[data-track]')];
+  for(const b of trackButtons)b.onclick=()=>chooseTrack(b.dataset.track);
+  const trackQuery=$('#track-query');
+  trackQuery.onkeydown=event=>{if(event.key==='Enter')event.preventDefault();};
+  trackQuery.oninput=event=>{
+    const terms=foldText(event.target.value).split(/\s+/u).filter(Boolean);
+    for(const [index,track] of availableTracks.entries()){
+      const label=foldText(track.audioName+' '+track.mood);
+      trackButtons[index].hidden=!terms.every(term=>label.includes(term));
+    }
+    $('#track-empty').textContent=trackButtons.every(button=>button.hidden)?'Совпадений нет. Попробуйте другое название или настроение.':'';
+  };
   const chooseTrack=async id=>{
     const item=availableTracks.find(x=>x.id===id);
     if(!item || id===d.trackId)return;
@@ -633,7 +660,9 @@ async function formPage(stamp,editing){
   $('form').onsubmit=async e=>{
     e.preventDefault();if(formBusy || pending)return;
     const problems={};let composition;
-    if(!d.dayDate || !$('#date').validity.valid)problems.date='Выберите дату дня.';
+    dateField.max=localDate();
+    if(dateField.validity.rangeOverflow)problems.date=futureDateMessage;
+    else if(!d.dayDate || !dateField.validity.valid)problems.date='Выберите дату дня.';
     try{composition=composeText(recordedText(d));}catch(err){problems.story=err.message;}
     try{checkPhotos(d.photos);}catch(err){problems.photos=err.message;}
     try{checkAudio(d.audio);}catch(err){problems.song=err.message;}
@@ -662,7 +691,7 @@ async function previewPage(stamp,editingId){
       let restored=draft?.key===key?draft:await getDraft(key);
       if(!restored && editingId){const entry=await getDay(editingId);if(entry)restored=newDraft(entry);}
       if(stamp!==turn)return;
-      if(!restored?.dayDate || !restored.audio || !restored.photos.length){location.replace(materials);return;}
+      if(!restored?.dayDate || restored.dayDate>localDate() || !restored.audio || !restored.photos.length){location.replace(materials);return;}
       const composition=composeText(recordedText(restored));
       const [photo,timing]=await Promise.all([analyzePhotos(restored.photos,restored.coverIndex),analyzeAudio(restored.audio)]);
       if(stamp!==turn)return;
@@ -884,6 +913,11 @@ async function previewPage(stamp,editingId){
   };
   saveButton.onclick=async()=>{
     if(saving||changingTrack)return;
+    if(entry.dayDate>localDate()){
+      toast('Выберите сегодняшний или прошедший день.');
+      location.replace(materials);
+      return;
+    }
     if(!checkTitle()){titleField.focus();return;}if(!checkQuote()){custom.focus();return;}
     saving=true;saveButton.disabled=true;saveButton.setAttribute('aria-busy','true');errorText('save','');
     for(const field of [titleField,choice,custom,compareButton,montage,...timingFields])field.disabled=true;

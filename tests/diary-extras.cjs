@@ -14,8 +14,9 @@ async function run() {
   try {
     for (const width of [1440, 390, 320]) {
       const mobile = width < 500;
-      const context = await browser.newContext({baseURL, viewport: {width, height: 900}, isMobile: mobile, hasTouch: mobile, reducedMotion: 'reduce'});
+      const context = await browser.newContext({baseURL, viewport: {width, height: 900}, isMobile: mobile, hasTouch: mobile, reducedMotion: 'reduce', timezoneId:'America/Los_Angeles'});
       const page = await context.newPage();
+      await page.clock.setFixedTime(new Date('2026-12-01T00:02:00Z'));
       const failures = [];
       page.on('pageerror', error => failures.push(error.message));
       page.on('response', response => {
@@ -39,6 +40,13 @@ async function run() {
       await page.getByText('Как подбираются звуки?', {exact: true}).click();
       await page.getByRole('link', {name: 'Как используется фото'}).waitFor();
       await noOverflow(page, 'editor ' + width);
+      const date=page.locator('#date');
+      assert.equal(await date.getAttribute('max'),'2026-11-30');
+      await date.fill('2026-12-01');
+      await page.locator('#prepare').click();
+      await page.locator('#err-date').filter({hasText:'Выберите сегодняшний или прошедший день.'}).waitFor();
+      assert.match(page.url(),/#new$/);
+      await date.fill('2026-11-08');
       await page.locator('#prepare').click();
       await page.locator('#save').waitFor();
       await noOverflow(page, 'preview ' + width);
@@ -56,8 +64,13 @@ async function run() {
       await page.waitForURL('**#day/*');
       await page.getByRole('link', {name: 'К архиву'}).first().click();
       assert.equal(await stageDay.getAttribute('aria-pressed'), 'true');
-      await calendar.getByRole('button', {name: 'Следующий месяц'}).click();
+      const nextMonth=calendar.getByRole('button', {name: 'Следующий месяц'});
+      assert.equal(await nextMonth.isDisabled(),true);
+      assert.equal(await calendar.locator('[aria-current="date"]').textContent(),'30');
+      await calendar.getByRole('button', {name: 'Предыдущий месяц'}).click();
       await calendar.getByText('В этом месяце записей нет.').waitFor();
+      await nextMonth.click();
+      assert.equal(await nextMonth.isDisabled(),true);
       await page.getByRole('button', {name: 'Список', exact: true}).click();
       assert.equal(await calendar.count(), 0);
       await page.goto('/privacy.html#account-deletion');

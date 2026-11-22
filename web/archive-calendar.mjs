@@ -10,14 +10,14 @@ export function shiftMonth(month, offset) {
   return date.toISOString().slice(0, 7);
 }
 
-export function renderArchiveCalendar(days, month, selected, card) {
+export function renderArchiveCalendar(days, month, selected, card, today) {
   const start = new Date(month + '-01T00:00:00Z');
   const first = (start.getUTCDay() + 6) % 7;
   const end = new Date(shiftMonth(month, 1) + '-01T00:00:00Z');
   const length = Math.round((end - start) / 86400000);
   const groups = new Map();
   for (const day of days) {
-    if (!day.dayDate.startsWith(month + '-')) continue;
+    if (day.dayDate>today || !day.dayDate.startsWith(month + '-')) continue;
     if (!groups.has(day.dayDate)) groups.set(day.dayDate, []);
     groups.get(day.dayDate).push(day);
   }
@@ -26,15 +26,16 @@ export function renderArchiveCalendar(days, month, selected, card) {
     const number = index + 1;
     const date = month + '-' + String(number).padStart(2, '0');
     const items = groups.get(date);
-    if (!items) return `<span class="calendar-empty">${number}</span>`;
+    const current = date===today ? ' aria-current="date"' : '';
+    if (!items) return `<span class="calendar-empty"${current}>${number}</span>`;
     const label = dayLabel.format(new Date(date)) + ' · ' + items.map(day => day.title).join(', ');
-    return `<button class="calendar-date" type="button" data-calendar-date="${date}" aria-label="${h(label)}" aria-pressed="${date === selected}">${number}<span class="calendar-dot" aria-hidden="true"></span></button>`;
+    return `<button class="calendar-date" type="button" data-calendar-date="${date}" aria-label="${h(label)}" aria-pressed="${date === selected}"${current}>${number}<span class="calendar-dot" aria-hidden="true"></span></button>`;
   }).join('');
   return `<section class="archive-calendar" aria-label="Календарь записей">
     <div class="calendar-controls">
       <button class="btn secondary" type="button" data-month-step="-1" aria-label="Предыдущий месяц">‹</button>
       <h3 aria-live="polite">${h(monthLabel.format(start))}</h3>
-      <button class="btn secondary" type="button" data-month-step="1" aria-label="Следующий месяц">›</button>
+      <button class="btn secondary" type="button" data-month-step="1" aria-label="Следующий месяц"${month===today.slice(0,7)?' disabled':''}>›</button>
     </div>
     <div class="calendar-grid">
       ${weekdays.map(day => `<span class="calendar-weekday">${day}</span>`).join('')}

@@ -137,18 +137,26 @@ async function run() {
     assert.deepEqual(await chips(fallback), ['Улица']);
     assert.match(await fallback.locator('#ambience-hint').innerText(), /по словам записи/);
 
-    // Diary tracks: the ten CC0 recordings work like the examples.
+    // Find a new track by mood and verify it plays after reopening the day.
     // Start with empty guest storage so the demo loader needs no confirmation.
     const tracks = await browser.newPage({baseURL: base, viewport: {width: 1280, height: 900}});
     tracks.on('pageerror', error => errors.push(error.message));
     await editor(tracks);
-    assert.equal(await tracks.locator('[data-track]').count(), 13);
+    assert.equal(await tracks.locator('[data-track]').count(), 19);
     await tracks.locator('.track-fit:not([hidden])').waitFor();
-    await tracks.locator('[data-track="track-night-talk"]').click();
-    await tracks.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Ночной разговор'));
+    await tracks.locator('#track-query').fill('колокольчики');
+    assert.equal(await tracks.locator('[data-track]:visible').count(),1);
+    await tracks.locator('[data-track="track-paper-lanterns"]').click();
+    await tracks.waitForFunction(() => document.querySelector('#audio-list').innerText.includes('Бумажные фонари'));
+    await tracks.locator('#ambience-add').selectOption('campfire');
+    await tracks.locator('[data-listen="campfire"]').click();
+    await tracks.waitForFunction(()=>document.querySelector('.sample-audio').currentTime>0);
     await tracks.locator('#prepare').click();
-    await tracks.locator('#save').waitFor();
-    assert.match(await tracks.locator('.page-heading p').innerText(), /Ночной разговор/);
+    await tracks.locator('#save').click();
+    await tracks.waitForURL('**#day/*');
+    await tracks.reload();
+    await tracks.locator('.day-sounds [data-listen="campfire"]').waitFor();
+    assert.match(await tracks.locator('.day-notes h2').innerText(), /Бумажные фонари/);
     await tracks.getByRole('button', {name: 'Воспроизвести', exact: true}).click();
     await tracks.getByRole('button', {name: 'Пауза', exact: true}).waitFor();
 

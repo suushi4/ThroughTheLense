@@ -17,6 +17,8 @@
 .calendar-weekday, .calendar-empty, .calendar-date {padding: .35rem 0}
 .calendar-date {min-height: 44px; border: 1px solid currentColor; border-radius: .5rem; background: transparent; color: inherit; font: inherit; cursor: pointer}
 .calendar-date[aria-pressed="true"] {outline: 2px solid currentColor; outline-offset: -3px}
+.calendar-grid [aria-current="date"] {color: var(--accent); font-weight: 800; text-decoration: underline; text-underline-offset: .2em}
+.calendar-controls button:disabled {opacity: .45; cursor: default}
 .calendar-dot {display: block; width: .3rem; height: .3rem; margin: .2rem auto 0; border-radius: 50%; background: currentColor}
 .collection-help {margin: .25rem 0 .75rem}
 .privacy-tools {margin-block: 1.25rem}

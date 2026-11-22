@@ -84,7 +84,7 @@ async function run() {
     await page.locator('#remove-song').click();
     await page.locator('.track-fit:not([hidden])').waitFor();
     assert.equal(await page.locator('.track-fit:not([hidden])').count(), 1);
-    assert.equal(await page.locator('[data-track]').count(), 10);
+    assert.equal(await page.locator('[data-track]').count(), 16);
     assert.equal(await page.locator('[data-track][aria-pressed="true"]').count(), 0);
     assert.match(await page.locator('#track-hint').innerText(), /Выбор за вами/);
     await page.locator('[data-track="track-night-talk"]').click();

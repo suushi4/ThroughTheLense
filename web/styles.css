@@ -213,8 +213,13 @@ dialog:has(.lightbox) { width: min(900px,96%); padding: 48px 12px 12px; }
 .pick-cover[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .track-picks { min-inline-size: 0; margin-inline: 0; border: 0; padding: 0; }
 .track-picks legend { padding: 0; margin-bottom: 6px; font-size: 14px; font-weight: 730; }
-.track-options { display: flex; flex-wrap: wrap; gap: 8px; }
-.track-option { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--sheet); font-size: 14px; font-weight: 650; text-align: left; }
+.track-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,170px),1fr)); gap: 8px; }
+.track-option { display: flex; align-items: flex-start; gap: 8px; min-height: 52px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--sheet); font-size: 14px; font-weight: 650; text-align: left; }
+.track-option svg { flex-shrink: 0; margin-top: 2px; }
+.track-label { display: grid; gap: 2px; }
+.track-label small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.track-label .track-fit { color: var(--accent); font-weight: 700; }
+#track-empty:empty { display: none; }
 .track-option:is(:hover,:focus-visible) { border-color: var(--line-strong); }
 .track-option[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .ambience-picks { min-inline-size: 0; margin-inline: 0; border: 0; padding: 0; }

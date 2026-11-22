@@ -18,3 +18,7 @@
 | `wind-window.mp3` | Ветер в окно | Ф. Шопен, Прелюдия до мажор, op. 28 № 1 | Frederic Chopin | [Prelude Op. 28 no. 1.mp3](https://commons.wikimedia.org/wiki/File%3APrelude_Op._28_no._1.mp3) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | 0–37 с |
 
 Подсказка «подходит к фото» сравнивает теплоту обложки с полем `warmth` трека в `web/tracks.mjs`. Значения выставлены вручную по настроению пьесы на той же шкале, что у обложек: около 0,06 для холодных и тревожных, около 0,13 для светлых и праздничных.
+
+## Оригинальные инструментальные фрагменты
+
+В файлах `soft-morning.mp3`, `open-window.mp3`, `blue-hour.mp3`, `paper-lanterns.mp3`, `late-platform.mp3` и `beyond-hills.mp3` звучат мелодии и аккомпанемент, синтезированные для ThroughTheLense. Они не содержат сторонних записей или семплов и доступны для использования в сценах и копиях дня.

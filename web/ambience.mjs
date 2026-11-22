@@ -17,6 +17,10 @@ export const ambienceLibrary = [
   {id:'wind', title:'Ветер', file:'wind.mp3', words:pattern(['вет[её]р','ветр','ветрен','сквозняк','бур[яиюе]','метел','вьюг','порыв'])},
   {id:'indoor-quiet', title:'Часы в тихой комнате', file:'indoor-quiet.mp3', words:pattern(['комнат','квартир','кухн','тишин','тих','дома(?!\\p{L})','у себя','книг','плед','часы','репетиц','зал[аеу]?(?!\\p{L})','сцен'])},
   {id:'stream', title:'Ручей', file:'stream.mp3', words:pattern(['руч[её]','речк','речн','рек[аиуе]','озер','вод[аыуео]','фонтан','водопад','тает','таял'])},
+  {id:'sea', title:'Морской прибой', file:'sea.mp3', words:pattern(['мор[еяю](?!\\p{L})','морск','океан','прибой'])},
+  {id:'night-crickets', title:'Сверчки ночью', file:'night-crickets.mp3', words:pattern(['сверч','цикад'])},
+  {id:'campfire', title:'Треск костра', file:'campfire.mp3', words:pattern(['кост[её]р','костр','камин','дров'])},
+  {id:'train', title:'Поезд', file:'train.mp3', words:pattern(['поезд','электричк','рельс'])},
 ];
 
 const byId = new Map(ambienceLibrary.map(item => [item.id, item]));
